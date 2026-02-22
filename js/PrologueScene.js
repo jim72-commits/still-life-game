@@ -75,14 +75,21 @@ class PrologueScene extends Phaser.Scene {
       this._goToLevel1();
     });
 
-    // Delay the global tap-to-skip listener so the tap that launched this
-    // scene from MenuScene cannot immediately dismiss the prologue.
-    this.time.delayedCall(600, () => {
+    // Wait for the launching tap to fully release (pointerup) before arming
+    // the tap-to-skip listener. This prevents the Chapter 1 tap from
+    // immediately dismissing the prologue when the scene loads.
+    const armSkip = () => {
       if (this._done) return;
-      this.input.on("pointerdown", (_pointer, targets) => {
-        if (targets.length === 0) this._goToLevel1();
+      this.input.once("pointerup", () => {
+        if (this._done) return;
+        this.input.on("pointerdown", (_pointer, targets) => {
+          if (targets.length === 0) this._goToLevel1();
+        });
       });
-    });
+    };
+    // Minimum 400ms before even listening for the pointerup, in case
+    // the scene starts before the finger has lifted at all.
+    this.time.delayedCall(400, armSkip);
   }
 
   _goToLevel1() {
