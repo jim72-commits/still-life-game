@@ -16,6 +16,13 @@ class LetterScene extends Phaser.Scene {
     this.cameras.main.setBackgroundColor(0x0f0f0f);
     this.cameras.main.fadeIn(400, 15, 15, 15);
 
+    // Disable Phaser input for this scene - all interaction is through HTML
+    // This prevents mobile touch capture issues
+    if (this.input) {
+      this.input.enabled = false;
+      console.log('[LetterScene] Phaser input disabled (scene uses HTML only)');
+    }
+
     // Mark as read (permanent — not cleared by resetAll)
     try { localStorage.setItem(LS.letterRead(), 'true'); } catch (_) {}
 
@@ -479,15 +486,21 @@ class LetterScene extends Phaser.Scene {
     this._cleanup();
     console.log('[LetterScene] HTML elements cleaned up');
     
-    // Wait for fade animation, then transition to next scene
-    setTimeout(() => {
-      console.log('[LetterScene] Starting SummaryScene');
-      try {
-        this.scene.start('SummaryScene');
-      } catch (e) {
-        console.error('[LetterScene] Error transitioning:', e);
-      }
-    }, 600);
+    // CRITICAL: Disable this scene's input system immediately (fixes mobile touch capture)
+    if (this.input) {
+      this.input.enabled = false;
+      console.log('[LetterScene] Input disabled');
+    }
+    
+    // Stop this scene immediately and start SummaryScene
+    // Don't wait for fade - the visual fade already happened with opacity
+    console.log('[LetterScene] Stopping LetterScene, starting SummaryScene');
+    try {
+      this.scene.stop('LetterScene');
+      this.scene.start('SummaryScene');
+    } catch (e) {
+      console.error('[LetterScene] Error transitioning:', e);
+    }
   }
 
   _cleanup() {
