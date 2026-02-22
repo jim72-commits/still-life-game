@@ -534,6 +534,8 @@ class GameScene extends Phaser.Scene {
       localStorage.removeItem(LS.hintsFocus());
       localStorage.removeItem(LS.hintsClue());
       localStorage.removeItem(LS.hintsReveal());
+      // Clear prologue flag so it replays on the next fresh start
+      localStorage.removeItem(LS.prologue);
     } catch (_) {}
   }
 }

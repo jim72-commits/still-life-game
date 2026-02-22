@@ -311,16 +311,30 @@ Chapter 2: The Office — Coming Soon</div>
         return;
       }
 
-      // Silent buffer unlock (proven on iOS via howler.js)
+      // Silent buffer — required to unblock iOS WebKit audio
       var buf = audioCtx.createBuffer(1, 1, 22050);
       var src = audioCtx.createBufferSource();
       src.buffer = buf;
       src.connect(audioCtx.destination);
       src.start(0);
 
+      // Safari often transitions to "running" synchronously after src.start(0)
+      if (audioCtx.state === 'running') {
+        finishUnlock();
+        return;
+      }
+
+      // Chrome/Firefox: resume() resolves async
       audioCtx.resume().then(function() {
         if (!unlocked) finishUnlock();
       }).catch(function() {});
+
+      // Safari fallback: resume() sometimes never resolves — poll once after 150ms
+      setTimeout(function() {
+        if (!unlocked && audioCtx && audioCtx.state === 'running') {
+          finishUnlock();
+        }
+      }, 150);
     } catch(e) {}
   }
 

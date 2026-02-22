@@ -209,8 +209,9 @@ class MenuScene extends Phaser.Scene {
     zone.on("pointerdown", () => {
       soundManager.playClick();
       if (isComplete) {
+        // Reset clears progress + prologue flag, then replay from the beginning
         GameScene.resetAll();
-        this.scene.start("GameScene", { levelIndex: 0 });
+        this.scene.start("PrologueScene");
       } else if (saved === 0 && !PrologueScene.hasBeenSeen()) {
         this.scene.start("PrologueScene");
       } else if (saved >= 5) {

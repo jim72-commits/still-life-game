@@ -49,13 +49,11 @@ class SoundManager {
     }
 
     if (this.ctx.state === "running") {
-      this._unlocked = true;
-      this._removeGestureListeners();
-      this.playAmbient();
+      this._doUnlock();
       return;
     }
 
-    // Synchronous silent buffer play (proven iOS unlock via howler.js)
+    // Synchronous silent buffer play — required to unblock iOS WebKit
     try {
       const buf = this.ctx.createBuffer(1, 1, 22050);
       const src = this.ctx.createBufferSource();
@@ -64,16 +62,32 @@ class SoundManager {
       src.start(0);
     } catch (_) {}
 
-    // resume() is async on iOS -- only mark unlocked when it resolves
+    // Safari often transitions to "running" synchronously after src.start(0)
+    if (this.ctx.state === "running") {
+      this._doUnlock();
+      return;
+    }
+
+    // resume() path for Chrome/Firefox (async Promise)
     try {
       this.ctx.resume().then(() => {
-        if (!this._unlocked) {
-          this._unlocked = true;
-          this._removeGestureListeners();
-          this.playAmbient();
-        }
+        if (!this._unlocked) this._doUnlock();
       }).catch(() => {});
     } catch (_) {}
+
+    // Safari fallback: resume() sometimes never resolves — poll once after 150ms
+    setTimeout(() => {
+      if (!this._unlocked && this.ctx && this.ctx.state === "running") {
+        this._doUnlock();
+      }
+    }, 150);
+  }
+
+  _doUnlock() {
+    if (this._unlocked) return;
+    this._unlocked = true;
+    this._removeGestureListeners();
+    this.playAmbient();
   }
 
   _getCtx() {

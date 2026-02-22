@@ -148,6 +148,9 @@
       type: Phaser.AUTO,
       width: 400,
       height: 700,
+      // Render at native device pixel ratio so text is sharp on Retina/OLED screens.
+      // Capped at 3 to avoid excessive GPU work on very high-DPI devices.
+      resolution: Math.min(window.devicePixelRatio || 1, 3),
       backgroundColor: "#1a1a1a",
       parent: document.body,
       input: { touch: true },
