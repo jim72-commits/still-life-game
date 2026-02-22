@@ -216,7 +216,7 @@ class SummaryScene extends Phaser.Scene {
   // ── Continue button ────────────────────────────────────
 
   _createContinueButton(cx, cy, mono) {
-    const btnW = 160;
+    const btnW = 220;
     const btnH = 44;
 
     const bg = this.add.graphics();

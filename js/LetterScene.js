@@ -16,6 +16,10 @@ class LetterScene extends Phaser.Scene {
     this.cameras.main.setBackgroundColor(0x0f0f0f);
     this.cameras.main.fadeIn(400, 15, 15, 15);
 
+    // Allow the HTML letter paper to receive scroll/touch events by removing
+    // the Phaser canvas from the touch-event path while this scene is active.
+    try { this.game.canvas.style.pointerEvents = 'none'; } catch (_) {}
+
     // Mark as read (permanent — not cleared by resetAll)
     try { localStorage.setItem(LS.letterRead(), 'true'); } catch (_) {}
 
@@ -138,6 +142,7 @@ class LetterScene extends Phaser.Scene {
       boxSizing: 'border-box',
       fontFamily: "'Lora', Georgia, serif",
       WebkitOverflowScrolling: 'touch',
+      touchAction: 'pan-y',
     });
 
     // Paper texture overlay (SVG noise at 3% opacity)
@@ -472,6 +477,8 @@ class LetterScene extends Phaser.Scene {
     // After fade completes, clean up DOM and go to accomplishment screen
     setTimeout(() => {
       this._cleanup();
+      // Restore Phaser canvas to receive events again
+      try { this.game.canvas.style.pointerEvents = ''; } catch (_) {}
       try {
         this.scene.start('SummaryScene');
       } catch (_) {}
