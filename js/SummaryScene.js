@@ -4,12 +4,18 @@ class SummaryScene extends Phaser.Scene {
   }
 
   create() {
-    // Ensure the Phaser canvas can receive input (guards against LetterScene
-    // having disabled pointer events for its HTML scroll overlay).
+    console.log('[SummaryScene] Scene starting');
+    
+    // Ensure the Phaser canvas can receive input
     const canvas = this.sys.game.canvas;
     if (canvas) {
-      canvas.style.pointerEvents = 'auto';
-      console.log('[SummaryScene] Canvas pointer-events set to:', canvas.style.pointerEvents);
+      const currentPE = canvas.style.pointerEvents;
+      if (!currentPE || currentPE === 'none') {
+        canvas.style.pointerEvents = 'auto';
+        console.log('[SummaryScene] Canvas pointer-events was:', currentPE, '→ set to: auto');
+      } else {
+        console.log('[SummaryScene] Canvas pointer-events already:', currentPE);
+      }
     }
 
     // Aggressively remove any LetterScene HTML that might still exist

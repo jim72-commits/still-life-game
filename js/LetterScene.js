@@ -16,10 +16,6 @@ class LetterScene extends Phaser.Scene {
     this.cameras.main.setBackgroundColor(0x0f0f0f);
     this.cameras.main.fadeIn(400, 15, 15, 15);
 
-    // Allow the HTML letter paper to receive scroll/touch events by removing
-    // the Phaser canvas from the touch-event path while this scene is active.
-    try { this.game.canvas.style.pointerEvents = 'none'; } catch (_) {}
-
     // Mark as read (permanent — not cleared by resetAll)
     try { localStorage.setItem(LS.letterRead(), 'true'); } catch (_) {}
 
@@ -143,6 +139,7 @@ class LetterScene extends Phaser.Scene {
       fontFamily: "'Lora', Georgia, serif",
       WebkitOverflowScrolling: 'touch',
       touchAction: 'pan-y',
+      pointerEvents: 'auto',
     });
 
     // Paper texture overlay (SVG noise at 3% opacity)
@@ -361,6 +358,7 @@ class LetterScene extends Phaser.Scene {
       left: '50%', transform: 'translateX(-50%)',
       zIndex: '700',
       outline: 'none', WebkitAppearance: 'none', appearance: 'none',
+      pointerEvents: 'auto',
     });
     btn.textContent = 'Accomplishments';
     btn.addEventListener('mouseover', () => {
@@ -481,17 +479,10 @@ class LetterScene extends Phaser.Scene {
     this._cleanup();
     console.log('[LetterScene] HTML elements cleaned up');
     
-    // Restore Phaser canvas to receive pointer/touch events again
-    if (this.game && this.game.canvas) {
-      this.game.canvas.style.pointerEvents = 'auto';
-      console.log('[LetterScene] Canvas pointer-events restored to:', this.game.canvas.style.pointerEvents);
-    }
-    
-    // Wait for fade animation, then explicitly stop this scene before starting next
+    // Wait for fade animation, then transition to next scene
     setTimeout(() => {
-      console.log('[LetterScene] Stopping LetterScene, starting SummaryScene');
+      console.log('[LetterScene] Starting SummaryScene');
       try {
-        this.scene.stop('LetterScene');
         this.scene.start('SummaryScene');
       } catch (e) {
         console.error('[LetterScene] Error transitioning:', e);

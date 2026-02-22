@@ -95,8 +95,12 @@ class MenuScene extends Phaser.Scene {
   // ── Full menu UI (portrait: stacked vertically) ─────────
 
   _buildMenu() {
-    // Guard: ensure canvas pointer events are active (LetterScene disables them).
-    try { this.sys.game.canvas.style.pointerEvents = 'auto'; } catch (_) {}
+    // Guard: ensure canvas pointer events are active
+    const canvas = this.sys.game.canvas;
+    if (canvas && (!canvas.style.pointerEvents || canvas.style.pointerEvents === 'none')) {
+      canvas.style.pointerEvents = 'auto';
+      console.log('[MenuScene] Canvas pointer-events restored to auto');
+    }
 
     const cx = 200;
     const saved = GameScene.loadProgress();
