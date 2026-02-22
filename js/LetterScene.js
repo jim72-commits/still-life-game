@@ -352,12 +352,12 @@ class LetterScene extends Phaser.Scene {
       opacity: '0',
       transition: 'opacity 600ms ease, color 200ms ease, border-color 200ms ease',
       position: 'fixed',
-      bottom: 'calc(32px + env(safe-area-inset-bottom, 0px))',
+      bottom: 'calc(70px + env(safe-area-inset-bottom, 0px))',
       left: '50%', transform: 'translateX(-50%)',
       zIndex: '700',
       outline: 'none', WebkitAppearance: 'none', appearance: 'none',
     });
-    btn.textContent = 'Return to Menu';
+    btn.textContent = 'Accomplishments';
     btn.addEventListener('mouseover', () => {
       btn.style.color = '#d8d8e8';
       btn.style.borderColor = '#666677';
@@ -469,11 +469,11 @@ class LetterScene extends Phaser.Scene {
       el.style.opacity = '0';
     });
 
-    // After fade completes, clean up DOM and return to menu
+    // After fade completes, clean up DOM and go to accomplishment screen
     setTimeout(() => {
       this._cleanup();
       try {
-        this.scene.start('MenuScene');
+        this.scene.start('SummaryScene');
       } catch (_) {}
     }, 600);
   }

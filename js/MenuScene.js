@@ -149,11 +149,6 @@ class MenuScene extends Phaser.Scene {
         .setOrigin(0.5);
     }
 
-    // Envelope — only shown once Chapter 1 is complete
-    if (isComplete) {
-      this._createEnvelope();
-    }
-
     this._createMuteToggle();
     this.input.once("pointerdown", () => soundManager.playAmbient());
 
@@ -213,12 +208,8 @@ class MenuScene extends Phaser.Scene {
     zone.on("pointerout", () => draw(0x252542, 0x6666aa));
     zone.on("pointerdown", () => {
       soundManager.playClick();
-      if (isComplete) {
-        // Reset clears progress + prologue flag, then replay from the beginning
-        GameScene.resetAll();
-        this.scene.start("PrologueScene");
-      } else if (saved === 0) {
-        // No progress yet — always show prologue (clears any stale seen flag)
+      if (saved === 0) {
+        // No progress yet (fresh start or post-reset) — clear stale prologue flag and show intro
         try { localStorage.removeItem(LS.prologue); } catch (_) {}
         this.scene.start("PrologueScene");
       } else if (saved >= 5) {
@@ -406,83 +397,6 @@ class MenuScene extends Phaser.Scene {
 
   // ── Envelope (letter reward) ───────────────────────────
 
-  _createEnvelope() {
-    const isRead = (() => {
-      try { return localStorage.getItem(LS.letterRead()) === 'true'; } catch (_) { return false; }
-    })();
-
-    const ex = 26;   // envelope center x
-    const ey = 614;  // envelope center y (below rating, above reset button)
-    const ew = 32;
-    const eh = 22;
-
-    // Draw envelope graphic
-    const g = this.add.graphics();
-
-    const drawEnv = (alpha) => {
-      g.clear();
-      // Body
-      g.fillStyle(0xc0a060, alpha);
-      g.fillRect(ex - ew / 2, ey - eh / 2, ew, eh);
-      // Flap triangle (top edge pointing down to center)
-      g.fillStyle(0xa08040, alpha);
-      g.fillTriangle(
-        ex - ew / 2, ey - eh / 2,
-        ex + ew / 2, ey - eh / 2,
-        ex, ey
-      );
-      // Wax seal dot
-      g.fillStyle(0x8a6a20, alpha);
-      g.fillCircle(ex, ey, 3);
-    };
-    drawEnv(isRead ? 0.7 : 1);
-
-    const typo = '"Special Elite", "Courier New", monospace';
-    const label = this.add
-      .text(ex + ew / 2 + 10, ey, isRead ? 'A letter from The House.' : 'A letter arrived.', {
-        fontSize: '13px',
-        fontFamily: 'Georgia, serif',
-        fontStyle: 'italic',
-        color: '#c0a060',
-      })
-      .setOrigin(0, 0.5)
-      .setAlpha(isRead ? 0.7 : 1);
-
-    // Generous touch zone covering envelope + label
-    const zoneW = 200;
-    const zone = this.add
-      .zone(ex + zoneW / 2 - 10, ey, zoneW, 44)
-      .setInteractive({ useHandCursor: true });
-
-    zone.on('pointerdown', () => {
-      soundManager.playClick();
-      this.scene.start('LetterScene');
-    });
-
-    // Pulse animation when letter not yet read
-    if (!isRead) {
-      this.tweens.add({
-        targets: [label],
-        alpha: { from: 0.5, to: 1 },
-        duration: 2000,
-        repeat: -1,
-        yoyo: true,
-        ease: 'Sine.easeInOut',
-      });
-      // Also pulse the graphic by tweening a tint rectangle
-      this._envPulseTween = this.tweens.addCounter({
-        from: 50, to: 100,
-        duration: 2000,
-        repeat: -1,
-        yoyo: true,
-        ease: 'Sine.easeInOut',
-        onUpdate: (tween) => {
-          const a = tween.getValue() / 100;
-          drawEnv(a);
-        },
-      });
-    }
-  }
 
 
   // ── Mute toggle ────────────────────────────────────────

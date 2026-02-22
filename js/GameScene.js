@@ -13,7 +13,7 @@ class GameScene extends Phaser.Scene {
     const level = levels[this.levelIndex];
 
     if (!level) {
-      this.scene.start("SummaryScene");
+      this.scene.start("LetterScene");
       return;
     }
 
@@ -187,7 +187,7 @@ class GameScene extends Phaser.Scene {
       this.cameras.main.once("camerafadeoutcomplete", () => {
         if (next >= levels.length) {
           GameScene.saveProgress(next);
-          this.scene.start("SummaryScene");
+          this.scene.start("LetterScene");
         } else {
           GameScene.saveProgress(next);
           this.scene.restart({ levelIndex: next });
@@ -672,6 +672,11 @@ class GameScene extends Phaser.Scene {
       localStorage.removeItem(LS.hintsFocus());
       localStorage.removeItem(LS.hintsClue());
       localStorage.removeItem(LS.hintsReveal());
+      localStorage.removeItem(LS.completed());
+      localStorage.removeItem(LS.rating());
+      localStorage.removeItem(LS.certDate());
+      localStorage.removeItem(LS.bestFirst());
+      localStorage.removeItem(LS.letterRead());
       // Clear prologue flag so it replays on the next fresh start
       localStorage.removeItem(LS.prologue);
     } catch (_) {}
