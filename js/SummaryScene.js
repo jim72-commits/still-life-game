@@ -6,44 +6,26 @@ class SummaryScene extends Phaser.Scene {
   create() {
     console.log('[SummaryScene] Scene starting');
     
-    // Ensure the Phaser canvas can receive input
+    // Disable canvas pointer events so HTML buttons receive touch events
     const canvas = this.sys.game.canvas;
     if (canvas) {
-      const currentPE = canvas.style.pointerEvents;
-      if (!currentPE || currentPE === 'none') {
-        canvas.style.pointerEvents = 'auto';
-        console.log('[SummaryScene] Canvas pointer-events was:', currentPE, '→ set to: auto');
-      } else {
-        console.log('[SummaryScene] Canvas pointer-events already:', currentPE);
-      }
+      canvas.style.pointerEvents = 'none';
+      console.log('[SummaryScene] Canvas pointer-events set to: none (for HTML buttons)');
     }
+    
+    // Track HTML elements for cleanup
+    this._htmlElements = [];
 
-    // Aggressively remove any LetterScene HTML that might still exist
+    // Clean up any LetterScene HTML that might still exist
     const cleanupIds = ['sl-paper-svg', 'sl-backdrop', 'sl-paper', 'sl-chevron', 'sl-close-btn'];
-    let foundOrphans = 0;
     cleanupIds.forEach(id => {
       try {
         const el = document.getElementById(id);
         if (el && el.parentNode) {
           el.parentNode.removeChild(el);
-          foundOrphans++;
         }
       } catch (_) {}
     });
-    // Also remove any orphaned sl- prefixed elements
-    document.querySelectorAll('[id^="sl-"]').forEach(el => {
-      try {
-        if (el && el.parentNode) {
-          el.parentNode.removeChild(el);
-          foundOrphans++;
-        }
-      } catch (_) {}
-    });
-    console.log('[SummaryScene] Checked for orphaned HTML, removed:', foundOrphans, 'elements');
-    
-    // Count all body children to help debug
-    const bodyChildren = document.body.children.length;
-    console.log('[SummaryScene] Total body children:', bodyChildren);
 
     const cx = 200;
     const raw = GameScene.loadStats();
@@ -188,73 +170,121 @@ class SummaryScene extends Phaser.Scene {
     const btnH = 28;
     const btnY = cy + 24;
 
-    const btnBg = this.add.graphics();
-    const drawBtn = (fill, stroke) => {
-      btnBg.clear();
-      btnBg.fillStyle(fill, 1);
-      btnBg.fillRoundedRect(cx - btnW / 2, btnY - btnH / 2, btnW, btnH, 5);
-      btnBg.lineStyle(1, stroke, 0.6);
-      btnBg.strokeRoundedRect(cx - btnW / 2, btnY - btnH / 2, btnW, btnH, 5);
-    };
-    drawBtn(0x333328, 0x555540);
-
-    const btnLabel = this.add
-      .text(cx, btnY, this._shareButtonLabel(), {
-        fontSize: "12px",
-        fontFamily: mono,
-        color: "#bbbb99",
-      })
-      .setOrigin(0.5);
-
-    const zone = this.add
-      .zone(cx, btnY, btnW, btnH)
-      .setInteractive({ useHandCursor: true })
-      .setDepth(100);
-
-    zone.on("pointerover", () => {
-      console.log('[SummaryScene] Share button - hover');
-      drawBtn(0x44443a, 0x777760);
-    });
-    zone.on("pointerout", () => {
-      console.log('[SummaryScene] Share button - out');
-      drawBtn(0x333328, 0x555540);
-    });
-    zone.on("pointerdown", () => {
-      console.log('[SummaryScene] Share button - CLICKED');
-      soundManager.playClick();
-      if (navigator.share) {
-        navigator
-          .share({ title: "Still Life", text: this.shareText })
-          .then(() => {
-            soundManager.playCorrect();
-            btnLabel.setText("Shared!");
-            btnLabel.setColor("#ccddaa");
-          })
-          .catch(() => this._fallbackCopy(btnLabel));
-      } else {
-        this._fallbackCopy(btnLabel);
-      }
-    });
+    // Create HTML button for iOS touch compatibility
+    this._createShareButton(cx, btnY, btnW, btnH, mono);
   }
 
-  _fallbackCopy(btnLabel) {
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(this.shareText).then(() => {
+  _createShareButton(cx, btnY, btnW, btnH, mono) {
+    // Get canvas position
+    const canvas = this.sys.game.canvas;
+    const rect = canvas.getBoundingClientRect();
+    const scale = rect.width / 400; // Canvas logical width is 400
+    
+    // Calculate button position
+    const btnLeft = rect.left + (cx - btnW / 2) * scale;
+    const btnTop = rect.top + (btnY - btnH / 2) * scale;
+    const scaledW = btnW * scale;
+    const scaledH = btnH * scale;
+    
+    // Create HTML button
+    const button = document.createElement('button');
+    button.textContent = this._shareButtonLabel();
+    Object.assign(button.style, {
+      position: 'fixed',
+      left: btnLeft + 'px',
+      top: btnTop + 'px',
+      width: scaledW + 'px',
+      height: scaledH + 'px',
+      fontFamily: mono,
+      fontSize: (12 * scale) + 'px',
+      color: '#bbbb99',
+      background: '#333328',
+      border: '1px solid rgba(85,85,64,0.6)',
+      borderRadius: '5px',
+      cursor: 'pointer',
+      pointerEvents: 'auto',
+      touchAction: 'manipulation',
+      WebkitTapHighlightColor: 'transparent',
+      zIndex: '1001',
+      outline: 'none'
+    });
+    
+    document.body.appendChild(button);
+    this._htmlElements.push(button);
+    
+    // iOS touch handling
+    let shareTapped = false;
+    const copyToClipboard = async () => {
+      soundManager.playClick();
+      const success = await this._copyToClipboard(this.shareText);
+      if (success) {
         soundManager.playCorrect();
-        btnLabel.setText("Copied!");
-        btnLabel.setColor("#ccddaa");
-        this.time.delayedCall(2000, () => {
-          btnLabel.setText(this._shareButtonLabel());
-          btnLabel.setColor("#bbbb99");
-        });
-      }).catch(() => {
-        btnLabel.setText("Copy failed");
-        btnLabel.setColor("#aa6666");
-        this.time.delayedCall(2000, () => {
-          btnLabel.setText(this._shareButtonLabel());
-          btnLabel.setColor("#bbbb99");
-        });
-      });
+        button.textContent = 'Copied!';
+        button.style.color = '#ccddaa';
+        setTimeout(() => {
+          button.textContent = this._shareButtonLabel();
+          button.style.color = '#bbbb99';
+        }, 2000);
+      } else {
+        button.textContent = 'Copy failed';
+        button.style.color = '#aa6666';
+        setTimeout(() => {
+          button.textContent = this._shareButtonLabel();
+          button.style.color = '#bbbb99';
+        }, 2000);
+      }
+    };
+    
+    button.ontouchend = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (shareTapped) return;
+      shareTapped = true;
+      copyToClipboard();
+      setTimeout(() => { shareTapped = false; }, 1000);
+    };
+    
+    button.onclick = () => {
+      if (shareTapped) return;
+      copyToClipboard();
+    };
+    
+    // Hover effects
+    button.onmouseenter = () => {
+      button.style.background = '#44443a';
+      button.style.borderColor = 'rgba(119,119,96,0.6)';
+    };
+    button.onmouseleave = () => {
+      button.style.background = '#333328';
+      button.style.borderColor = 'rgba(85,85,64,0.6)';
+    };
+  }
+
+  async _copyToClipboard(text) {
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(text);
+        return true;
+      }
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      textarea.style.position = 'fixed';
+      textarea.style.left = '-9999px';
+      textarea.style.top = '-9999px';
+      textarea.setAttribute('readonly', '');
+      textarea.setAttribute('contenteditable', 'true');
+      document.body.appendChild(textarea);
+      const range = document.createRange();
+      range.selectNodeContents(textarea);
+      const selection = window.getSelection();
+      selection.removeAllRanges();
+      selection.addRange(range);
+      textarea.setSelectionRange(0, 999999);
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+      return true;
+    } catch(e) {
+      return false;
     }
   }
 
@@ -268,46 +298,112 @@ class SummaryScene extends Phaser.Scene {
     const btnW = 220;
     const btnH = 44;
 
-    const bg = this.add.graphics();
-    const draw = (fill, stroke) => {
-      bg.clear();
-      bg.fillStyle(fill, 1);
-      bg.fillRoundedRect(cx - btnW / 2, cy - btnH / 2, btnW, btnH, 10);
-      bg.lineStyle(1, stroke, 1);
-      bg.strokeRoundedRect(cx - btnW / 2, cy - btnH / 2, btnW, btnH, 10);
-    };
-    draw(0x2a2a42, 0x555577);
-
-    this.add
-      .text(cx, cy, "[ Return to Menu ]", {
-        fontSize: "16px",
-        fontFamily: mono,
-        color: "#aaaacc",
-      })
-      .setOrigin(0.5);
-
-    const zone = this.add
-      .zone(cx, cy, btnW, btnH)
-      .setInteractive({ useHandCursor: true })
-      .setDepth(100);
-
-    zone.on("pointerover", () => {
-      console.log('[SummaryScene] Return to Menu button - hover');
-      draw(0x3a3a5a, 0x7777aa);
+    // Get canvas position
+    const canvas = this.sys.game.canvas;
+    const rect = canvas.getBoundingClientRect();
+    const scale = rect.width / 400; // Canvas logical width is 400
+    
+    // Calculate button position
+    const btnLeft = rect.left + (cx - btnW / 2) * scale;
+    const btnTop = rect.top + (cy - btnH / 2) * scale;
+    const scaledW = btnW * scale;
+    const scaledH = btnH * scale;
+    
+    // Create HTML button
+    const button = document.createElement('button');
+    button.textContent = '[ Return to Menu ]';
+    Object.assign(button.style, {
+      position: 'fixed',
+      left: btnLeft + 'px',
+      top: btnTop + 'px',
+      width: scaledW + 'px',
+      height: scaledH + 'px',
+      fontFamily: mono,
+      fontSize: (16 * scale) + 'px',
+      color: '#aaaacc',
+      background: '#2a2a42',
+      border: '1px solid #555577',
+      borderRadius: '10px',
+      cursor: 'pointer',
+      pointerEvents: 'auto',
+      touchAction: 'manipulation',
+      WebkitTapHighlightColor: 'transparent',
+      zIndex: '1001',
+      outline: 'none'
     });
-    zone.on("pointerout", () => {
-      console.log('[SummaryScene] Return to Menu button - out');
-      draw(0x2a2a42, 0x555577);
-    });
-    zone.on("pointerdown", () => {
+    
+    document.body.appendChild(button);
+    this._htmlElements.push(button);
+    
+    // iOS touch handling
+    let menuTapped = false;
+    const returnToMenu = () => {
       console.log('[SummaryScene] Return to Menu button - CLICKED');
       soundManager.playClick();
-      zone.input.enabled = false;
+      button.disabled = true;
+      
       this.cameras.main.fadeOut(800, 0, 0, 0);
       this.cameras.main.once("camerafadeoutcomplete", () => {
         console.log('[SummaryScene] Fade complete, starting MenuScene');
-        this.scene.start("MenuScene");
+        
+        // Clean up HTML elements
+        this._htmlElements.forEach(el => {
+          if (el && el.parentNode) {
+            el.parentNode.removeChild(el);
+          }
+        });
+        this._htmlElements = [];
+        
+        // Restore canvas touch events
+        const canvas = this.sys.game.canvas;
+        if (canvas) {
+          canvas.style.pointerEvents = 'auto';
+        }
+        
+        // Transition in next frame
+        requestAnimationFrame(() => {
+          this.scene.start('MenuScene');
+        });
       });
+    };
+    
+    button.ontouchend = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (menuTapped) return;
+      menuTapped = true;
+      returnToMenu();
+    };
+    
+    button.onclick = () => {
+      if (menuTapped) return;
+      returnToMenu();
+    };
+    
+    // Hover effects
+    button.onmouseenter = () => {
+      button.style.background = '#3a3a5a';
+      button.style.borderColor = '#7777aa';
+    };
+    button.onmouseleave = () => {
+      button.style.background = '#2a2a42';
+      button.style.borderColor = '#555577';
+    };
+    
+    // Cleanup on scene shutdown
+    this.events.once('shutdown', () => {
+      this._htmlElements.forEach(el => {
+        if (el && el.parentNode) {
+          el.parentNode.removeChild(el);
+        }
+      });
+      this._htmlElements = [];
+      
+      // Restore canvas touch events
+      const canvas = this.sys.game.canvas;
+      if (canvas) {
+        canvas.style.pointerEvents = 'auto';
+      }
     });
   }
 
