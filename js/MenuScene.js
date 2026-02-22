@@ -492,8 +492,8 @@ class MenuScene extends Phaser.Scene {
     this._addConfirmBtn(cx - 85, py + 48, "Yes, Reset", "#ee8888", 0x5a2a2a, 0xcc4444, () => {
       soundManager.playClick();
       GameScene.resetAll();
-      this._closeConfirm();
-      this.scene.restart();
+      // Go directly to prologue — no intermediate menu step that requires a second tap
+      this.scene.start("PrologueScene");
     });
 
     this._addConfirmBtn(cx + 85, py + 48, "Cancel", "#bbbbee", 0x2a2a4a, 0x6666aa, () => {
