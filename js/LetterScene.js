@@ -484,23 +484,47 @@ class LetterScene extends Phaser.Scene {
 
     // Clean up DOM immediately (elements are already invisible + non-interactive)
     this._cleanup();
-    console.log('[LetterScene] HTML elements cleaned up');
+    
+    // AGGRESSIVE: Force remove any LetterScene elements that might still exist
+    const forceCleanup = () => {
+      const ids = ['sl-paper-svg', 'sl-backdrop', 'sl-paper', 'sl-chevron', 'sl-close-btn'];
+      let removed = 0;
+      ids.forEach(id => {
+        const el = document.getElementById(id);
+        if (el && el.parentNode) {
+          el.parentNode.removeChild(el);
+          removed++;
+        }
+      });
+      // Also check for any orphaned elements by class or attribute
+      document.querySelectorAll('[id^="sl-"]').forEach(el => {
+        if (el && el.parentNode) {
+          el.parentNode.removeChild(el);
+          removed++;
+        }
+      });
+      return removed;
+    };
+    const cleaned = forceCleanup();
+    console.log('[LetterScene] HTML cleanup complete, removed:', cleaned, 'elements');
     
     // CRITICAL: Disable this scene's input system immediately (fixes mobile touch capture)
     if (this.input) {
       this.input.enabled = false;
-      console.log('[LetterScene] Input disabled');
+      console.log('[LetterScene] Phaser input disabled');
     }
     
-    // Stop this scene immediately and start SummaryScene
-    // Don't wait for fade - the visual fade already happened with opacity
-    console.log('[LetterScene] Stopping LetterScene, starting SummaryScene');
-    try {
-      this.scene.stop('LetterScene');
-      this.scene.start('SummaryScene');
-    } catch (e) {
-      console.error('[LetterScene] Error transitioning:', e);
-    }
+    // Mobile needs a tiny delay to ensure DOM cleanup completes
+    const delay = 50; // 50ms delay for mobile browsers to process DOM removal
+    setTimeout(() => {
+      console.log('[LetterScene] Stopping LetterScene, starting SummaryScene');
+      try {
+        this.scene.stop('LetterScene');
+        this.scene.start('SummaryScene');
+      } catch (e) {
+        console.error('[LetterScene] Error transitioning:', e);
+      }
+    }, delay);
   }
 
   _cleanup() {

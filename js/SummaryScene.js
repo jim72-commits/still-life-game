@@ -24,15 +24,26 @@ class SummaryScene extends Phaser.Scene {
     cleanupIds.forEach(id => {
       try {
         const el = document.getElementById(id);
-        if (el) {
-          document.body.removeChild(el);
+        if (el && el.parentNode) {
+          el.parentNode.removeChild(el);
           foundOrphans++;
         }
       } catch (_) {}
     });
-    if (foundOrphans > 0) {
-      console.log('[SummaryScene] Cleaned up', foundOrphans, 'orphaned HTML elements');
-    }
+    // Also remove any orphaned sl- prefixed elements
+    document.querySelectorAll('[id^="sl-"]').forEach(el => {
+      try {
+        if (el && el.parentNode) {
+          el.parentNode.removeChild(el);
+          foundOrphans++;
+        }
+      } catch (_) {}
+    });
+    console.log('[SummaryScene] Checked for orphaned HTML, removed:', foundOrphans, 'elements');
+    
+    // Count all body children to help debug
+    const bodyChildren = document.body.children.length;
+    console.log('[SummaryScene] Total body children:', bodyChildren);
 
     const cx = 200;
     const raw = GameScene.loadStats();
@@ -131,23 +142,6 @@ class SummaryScene extends Phaser.Scene {
 
     GameScene.saveCompletion(rating, stats);
     Analytics.chapterComplete("The House", rating);
-
-    // Debug: show a tap indicator to verify input is working
-    this._debugTaps = this.add.text(200, 600, "", {
-      fontSize: "11px",
-      fontFamily: mono,
-      color: "#666677",
-      align: "center",
-    }).setOrigin(0.5).setDepth(200);
-
-    this.input.on("pointerdown", (pointer) => {
-      if (this._debugTaps) {
-        this._debugTaps.setText(`Tap at (${Math.round(pointer.x)}, ${Math.round(pointer.y)})`);
-        this.time.delayedCall(2000, () => {
-          if (this._debugTaps) this._debugTaps.setText("");
-        });
-      }
-    });
   }
 
   _safeNum(val) {
