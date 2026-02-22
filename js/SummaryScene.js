@@ -8,6 +8,15 @@ class SummaryScene extends Phaser.Scene {
     // having disabled pointer events for its HTML scroll overlay).
     try { this.sys.game.canvas.style.pointerEvents = 'auto'; } catch (_) {}
 
+    // Aggressively remove any LetterScene HTML that might still exist
+    const cleanupIds = ['sl-paper-svg', 'sl-backdrop', 'sl-paper', 'sl-chevron', 'sl-close-btn'];
+    cleanupIds.forEach(id => {
+      try {
+        const el = document.getElementById(id);
+        if (el) document.body.removeChild(el);
+      } catch (_) {}
+    });
+
     const cx = 200;
     const raw = GameScene.loadStats();
     const stats = {
@@ -105,6 +114,23 @@ class SummaryScene extends Phaser.Scene {
 
     GameScene.saveCompletion(rating, stats);
     Analytics.chapterComplete("The House", rating);
+
+    // Debug: show a tap indicator to verify input is working
+    this._debugTaps = this.add.text(200, 600, "", {
+      fontSize: "11px",
+      fontFamily: mono,
+      color: "#666677",
+      align: "center",
+    }).setOrigin(0.5).setDepth(200);
+
+    this.input.on("pointerdown", (pointer) => {
+      if (this._debugTaps) {
+        this._debugTaps.setText(`Tap at (${Math.round(pointer.x)}, ${Math.round(pointer.y)})`);
+        this.time.delayedCall(2000, () => {
+          if (this._debugTaps) this._debugTaps.setText("");
+        });
+      }
+    });
   }
 
   _safeNum(val) {
@@ -171,7 +197,8 @@ class SummaryScene extends Phaser.Scene {
 
     const zone = this.add
       .zone(cx, btnY, btnW, btnH)
-      .setInteractive({ useHandCursor: true });
+      .setInteractive({ useHandCursor: true })
+      .setDepth(100);
 
     zone.on("pointerover", () => drawBtn(0x44443a, 0x777760));
     zone.on("pointerout", () => drawBtn(0x333328, 0x555540));
@@ -243,7 +270,8 @@ class SummaryScene extends Phaser.Scene {
 
     const zone = this.add
       .zone(cx, cy, btnW, btnH)
-      .setInteractive({ useHandCursor: true });
+      .setInteractive({ useHandCursor: true })
+      .setDepth(100);
 
     zone.on("pointerover", () => draw(0x3a3a5a, 0x7777aa));
     zone.on("pointerout", () => draw(0x2a2a42, 0x555577));

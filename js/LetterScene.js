@@ -468,17 +468,22 @@ class LetterScene extends Phaser.Scene {
       }
     } catch (_) {}
 
-    // Fade out all HTML elements simultaneously
+    // Fade out all HTML elements simultaneously and disable their pointer events
+    // so they don't block the next scene during the transition.
     this._el.forEach(el => {
       el.style.transition = 'opacity 500ms ease';
       el.style.opacity = '0';
+      el.style.pointerEvents = 'none';
     });
 
-    // After fade completes, clean up DOM and go to accomplishment screen
+    // Clean up DOM immediately (elements are already invisible + non-interactive)
+    // then wait for fade to finish before transitioning to the next scene.
+    this._cleanup();
+    
+    // Restore Phaser canvas to receive pointer/touch events again
+    try { this.game.canvas.style.pointerEvents = 'auto'; } catch (_) {}
+    
     setTimeout(() => {
-      this._cleanup();
-      // Restore Phaser canvas to receive pointer/touch events again
-      try { this.game.canvas.style.pointerEvents = 'auto'; } catch (_) {}
       try {
         this.scene.start('SummaryScene');
       } catch (_) {}

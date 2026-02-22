@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Still Life - Mobile Test</title>
+  <style>
+    body {
+      font-family: 'Special Elite', 'Courier New', monospace;
+      background: #1a1a1a;
+      color: #eeeeff;
+      padding: 20px;
+      margin: 0;
+    }
+    h1 { font-size: 24px; margin-bottom: 10px; }
+    h2 { font-size: 18px; color: #aaaacc; margin: 20px 0 10px; }
+    .test-btn {
+      display: block;
+      width: 100%;
+      margin: 8px 0;
+      padding: 16px;
+      background: #2a2a44;
+      border: 1px solid #555577;
+      border-radius: 8px;
+      color: #aaaacc;
+      font-size: 16px;
+      cursor: pointer;
+      text-align: left;
+    }
+    .test-btn:active {
+      background: #3a3a5a;
+    }
+    .pass { color: #77cc88; }
+    .fail { color: #cc6666; }
+    .info { 
+      background: #2a2a1e;
+      border: 1px solid #555540;
+      border-radius: 6px;
+      padding: 12px;
+      margin: 12px 0;
+      font-size: 13px;
+      color: #aaaa88;
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+  <h1>Still Life - Mobile Test</h1>
+  <p style="color: #888899; font-size: 13px; margin-bottom: 20px;">
+    Tap each button to open the game at specific points.
+    Test on your phone to verify all fixes.
+  </p>
+
+  <h2>1. Cheat Code Access</h2>
+  <button class="test-btn" onclick="testCheatCode()">
+    → Open game + Show how to access [~]
+  </button>
+  <div class="info">
+    <strong>What to check:</strong><br>
+    • Pause menu opens (tap "≡ Menu" top-left)<br>
+    • [~] is visible at top-right of Pause panel<br>
+    • [~] is tappable (44×44 touch area)<br>
+    • Type "alice" → jumps to level 30
+  </div>
+
+  <h2>2. Level 30 → Letter Flow</h2>
+  <button class="test-btn" onclick="testLevel30Flow()">
+    → Jump to Level 30 (auto-complete)
+  </button>
+  <div class="info">
+    <strong>Expected flow:</strong><br>
+    Level 30 submit → Letter scene → Accomplishments → Return to Menu<br><br>
+    <strong>What to check:</strong><br>
+    • Letter paper appears and is scrollable<br>
+    • "Accomplishments" button at bottom works<br>
+    • Summary screen shows stats<br>
+    • Both buttons work (Share + Return to Menu)
+  </div>
+
+  <h2>3. Reset Progress</h2>
+  <button class="test-btn" onclick="testReset()">
+    → Open menu (to test Reset)
+  </button>
+  <div class="info">
+    <strong>What to check:</strong><br>
+    • Tap "[ Reset Progress ]" at bottom<br>
+    • Tap "Yes, Reset"<br>
+    • Chapter 1 shows incomplete (no checkmark)<br>
+    • Tap Chapter 1 → Prologue appears
+  </div>
+
+  <h2>4. Letter Scroll Test</h2>
+  <button class="test-btn" onclick="testLetterDirect()">
+    → Open Letter directly
+  </button>
+  <div class="info">
+    <strong>What to check:</strong><br>
+    • Paper loads on screen<br>
+    • Swipe up/down scrolls the letter<br>
+    • "Accomplishments" button is visible<br>
+    • Button takes you to Summary screen
+  </div>
+
+  <script>
+    function testCheatCode() {
+      alert('Opening game...\n\n1. Tap "≡ Menu" (top-left)\n2. Look for [~] at top-right of Pause panel\n3. Tap it\n4. Type "alice"');
+      window.location.href = 'index.html';
+    }
+
+    function testLevel30Flow() {
+      // Set progress to level 29 (0-indexed), so next submit goes to level 30
+      try {
+        localStorage.setItem('stilllife_ch1_current_level', '29');
+        localStorage.setItem('stilllife_ch1_first_attempts', '20');
+        localStorage.setItem('stilllife_ch1_wrong_total', '5');
+      } catch (_) {}
+      alert('Progress set to Level 30.\n\nJust submit the puzzle (tap green button) to trigger:\nLevel 30 → Letter → Summary → Menu');
+      window.location.href = 'index.html';
+    }
+
+    function testReset() {
+      // Complete chapter so reset button is meaningful
+      try {
+        localStorage.setItem('stilllife_ch1_current_level', '30');
+        localStorage.setItem('stilllife_ch1_completed', 'true');
+        localStorage.setItem('stilllife_ch1_rating', 'Field Investigator');
+        localStorage.setItem('stilllife_ch1_first_attempts', '15');
+      } catch (_) {}
+      alert('Chapter 1 marked as complete.\n\nScroll down on menu and tap:\n"[ Reset Progress ]" → "Yes, Reset"\n\nThen verify Chapter 1 shows as incomplete.');
+      window.location.href = 'index.html';
+    }
+
+    function testLetterDirect() {
+      // Set completion flags so letter is accessible
+      try {
+        localStorage.setItem('stilllife_ch1_completed', 'true');
+        localStorage.setItem('stilllife_ch1_current_level', '30');
+      } catch (_) {}
+      alert('Opening letter scene directly.\n\nTest:\n• Scroll works\n• "Accomplishments" button visible\n• Button goes to Summary screen\n• Summary buttons work');
+      // We'll load the game and manually trigger letter - can't directly open LetterScene
+      window.location.href = 'index.html#letter';
+    }
+  </script>
+</body>
+</html>
