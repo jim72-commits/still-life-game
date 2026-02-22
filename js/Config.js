@@ -21,4 +21,5 @@ const LS = {
   bestFirst:    () => `stilllife_${CHAPTER_ID}_best_first_attempts`,
   prologue:     'stilllife_prologue_seen',
   muted:        'stilllife_muted',
+  letterRead:   () => `stilllife_${CHAPTER_ID}_letter_read`,
 };
