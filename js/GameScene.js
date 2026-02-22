@@ -187,6 +187,7 @@ class GameScene extends Phaser.Scene {
       this.cameras.main.once("camerafadeoutcomplete", () => {
         if (next >= levels.length) {
           GameScene.saveProgress(next);
+          this.scene.stop("UIScene");
           this.scene.start("LetterScene");
         } else {
           GameScene.saveProgress(next);
