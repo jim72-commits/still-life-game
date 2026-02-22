@@ -1,52 +1,51 @@
 class SoundManager {
   constructor() {
     this.ctx = null;
+    this.masterGain = null;
     this.muted = false;
     this.ambientSource = null;
     this.ambientGain = null;
     this.ambientFilter = null;
     this._available = true;
-    this._resumeBound = null;
+    this._gestureListenersBound = false;
     this._loadPreference();
-    this._initContext();
+    this._bindGestureListeners();
   }
 
+  // Lazy AudioContext — only created on first user interaction
   _initContext() {
+    if (this.ctx) return;
     try {
       const Ctor = window.AudioContext || window.webkitAudioContext;
       if (!Ctor) {
         this._available = false;
-        console.warn("Audio unavailable \u2014 running in silent mode");
+        console.warn("Audio unavailable — running in silent mode");
         return;
       }
       this.ctx = new Ctor();
-
-      this._resumeBound = () => this._resumeOnGesture();
-      document.addEventListener("pointerdown", this._resumeBound, { once: false, capture: true });
-      document.addEventListener("touchstart", this._resumeBound, { once: false, capture: true });
+      this.masterGain = this.ctx.createGain();
+      this.masterGain.gain.setValueAtTime(0.28, this.ctx.currentTime);
+      this.masterGain.connect(this.ctx.destination);
     } catch (_) {
       this._available = false;
-      console.warn("Audio unavailable \u2014 running in silent mode");
+      console.warn("Audio unavailable — running in silent mode");
     }
   }
 
-  _resumeOnGesture() {
-    if (!this.ctx) return;
-    try {
-      if (this.ctx.state === "suspended") {
+  _bindGestureListeners() {
+    if (this._gestureListenersBound) return;
+    this._gestureListenersBound = true;
+
+    const onGesture = () => {
+      this._initContext();
+      if (this.ctx && this.ctx.state === "suspended") {
         this.ctx.resume();
       }
-      if (this.ctx.state === "running") {
-        this._removeResumeListeners();
-      }
-    } catch (_) { /* ignore */ }
-  }
+      this.playAmbient();
+    };
 
-  _removeResumeListeners() {
-    if (!this._resumeBound) return;
-    document.removeEventListener("pointerdown", this._resumeBound, { capture: true });
-    document.removeEventListener("touchstart", this._resumeBound, { capture: true });
-    this._resumeBound = null;
+    document.addEventListener("touchstart", onGesture, { once: true });
+    document.addEventListener("pointerdown", onGesture, { once: true });
   }
 
   _getCtx() {
@@ -55,27 +54,27 @@ class SoundManager {
       if (this.ctx.state === "suspended") {
         this.ctx.resume();
       }
-    } catch (_) { /* ignore */ }
+    } catch (_) {}
     return this.ctx;
   }
 
   _cleanupNodes(osc, gain) {
     osc.onended = () => {
-      try { osc.disconnect(); } catch (_) { /* noop */ }
-      try { gain.disconnect(); } catch (_) { /* noop */ }
+      try { osc.disconnect(); } catch (_) {}
+      try { gain.disconnect(); } catch (_) {}
     };
   }
 
   _loadPreference() {
     try {
       this.muted = localStorage.getItem(LS.muted) === "true";
-    } catch (_) { /* storage unavailable */ }
+    } catch (_) {}
   }
 
   _savePreference() {
     try {
       localStorage.setItem(LS.muted, this.muted);
-    } catch (_) { /* storage unavailable */ }
+    } catch (_) {}
   }
 
   isMuted() {
@@ -93,7 +92,7 @@ class SoundManager {
           0.1
         );
       }
-    } catch (_) { /* fail silently */ }
+    } catch (_) {}
     return this.muted;
   }
 
@@ -142,7 +141,7 @@ class SoundManager {
       this.ambientFilter.connect(this.ambientGain);
       this.ambientGain.connect(ctx.destination);
       this.ambientSource.start();
-    } catch (_) { /* fail silently */ }
+    } catch (_) {}
   }
 
   stopAmbient() {
@@ -159,12 +158,12 @@ class SoundManager {
       this.ambientFilter = null;
 
       setTimeout(() => {
-        try { src.stop(); } catch (_) { /* already stopped */ }
-        try { src.disconnect(); } catch (_) { /* noop */ }
-        try { filter.disconnect(); } catch (_) { /* noop */ }
-        try { gain.disconnect(); } catch (_) { /* noop */ }
+        try { src.stop(); } catch (_) {}
+        try { src.disconnect(); } catch (_) {}
+        try { filter.disconnect(); } catch (_) {}
+        try { gain.disconnect(); } catch (_) {}
       }, 2000);
-    } catch (_) { /* fail silently */ }
+    } catch (_) {}
   }
 
   // ── UI Sounds (Web Audio API synthesis) ────────────────
@@ -187,7 +186,7 @@ class SoundManager {
       this._cleanupNodes(osc, gain);
       osc.start(t);
       osc.stop(t + 0.05);
-    } catch (_) { /* fail silently */ }
+    } catch (_) {}
   }
 
   playHintOpen() {
@@ -208,7 +207,7 @@ class SoundManager {
       this._cleanupNodes(osc, gain);
       osc.start(t);
       osc.stop(t + 0.14);
-    } catch (_) { /* fail silently */ }
+    } catch (_) {}
   }
 
   playHintClose() {
@@ -229,7 +228,7 @@ class SoundManager {
       this._cleanupNodes(osc, gain);
       osc.start(t);
       osc.stop(t + 0.14);
-    } catch (_) { /* fail silently */ }
+    } catch (_) {}
   }
 
   playDragStart() {
@@ -250,7 +249,7 @@ class SoundManager {
       this._cleanupNodes(osc, gain);
       osc.start(t);
       osc.stop(t + 0.06);
-    } catch (_) { /* fail silently */ }
+    } catch (_) {}
   }
 
   playCardPlace() {
@@ -271,7 +270,7 @@ class SoundManager {
       this._cleanupNodes(osc, gain);
       osc.start(t);
       osc.stop(t + 0.1);
-    } catch (_) { /* fail silently */ }
+    } catch (_) {}
   }
 
   playCorrect() {
@@ -297,7 +296,7 @@ class SoundManager {
       };
       play(523.25, 0, 0.22);
       play(659.25, 0.2, 0.3);
-    } catch (_) { /* fail silently */ }
+    } catch (_) {}
   }
 
   playWrong() {
@@ -318,7 +317,7 @@ class SoundManager {
       this._cleanupNodes(osc, gain);
       osc.start(t);
       osc.stop(t + 0.45);
-    } catch (_) { /* fail silently */ }
+    } catch (_) {}
   }
 
   playEnding() {
@@ -347,7 +346,7 @@ class SoundManager {
       play(261.6, 0);
       play(329.6, 0);
       play(392.0, 3);
-    } catch (_) { /* fail silently */ }
+    } catch (_) {}
   }
 }
 

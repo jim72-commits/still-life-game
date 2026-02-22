@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta name="apple-mobile-web-app-capable" content="yes">
 <title>Still Life — Ending</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
 <style>
@@ -225,35 +226,46 @@ Chapter 2: The Office — Coming Soon</div>
 
 <script>
 // ══════════════════════════════════════
-// AUDIO — Web Audio API
+// AUDIO — Web Audio API (lazy init for iOS)
 // ══════════════════════════════════════
 (function(){
-  let audioCtx, masterGain;
+  let audioCtx = null;
+  let masterGain = null;
   let audioStopped = false;
-  
+  let audioStarted = false;
+
   try {
-    if (localStorage.getItem("stilllife_muted") === "true") return; // global key, no chapter prefix
+    if (localStorage.getItem("stilllife_muted") === "true") return;
   } catch(_) {}
-  
-  try {
-    const Ctor = window.AudioContext || window.webkitAudioContext;
-    if (!Ctor) return;
-    
-    audioCtx = new Ctor();
-    masterGain = audioCtx.createGain();
-    masterGain.gain.setValueAtTime(0, audioCtx.currentTime);
-    masterGain.gain.linearRampToValueAtTime(0.28, audioCtx.currentTime + 2.5);
-    masterGain.connect(audioCtx.destination);
-    
-    playNote(true);
-  } catch(e) {}
-  
-  function resume() {
-    if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+
+  function initAudioContext() {
+    if (audioCtx) return;
+    try {
+      const Ctor = window.AudioContext || window.webkitAudioContext;
+      if (!Ctor) return;
+      audioCtx = new Ctor();
+      masterGain = audioCtx.createGain();
+      masterGain.gain.setValueAtTime(0, audioCtx.currentTime);
+      masterGain.gain.linearRampToValueAtTime(0.28, audioCtx.currentTime + 2.5);
+      masterGain.connect(audioCtx.destination);
+    } catch(e) {}
   }
-  document.addEventListener('pointerdown', resume, {once: true});
-  document.addEventListener('touchstart', resume, {once: true});
-  
+
+  function startAudio() {
+    if (audioStarted) return;
+    initAudioContext();
+    if (audioCtx && audioCtx.state === 'suspended') {
+      audioCtx.resume();
+    }
+    if (audioCtx) {
+      audioStarted = true;
+      playNote(true);
+    }
+  }
+
+  document.addEventListener('touchstart', startAudio, { once: true });
+  document.addEventListener('pointerdown', startAudio, { once: true });
+
   function playNote(isC) {
     if (audioStopped || !audioCtx) return;
     try {
@@ -274,14 +286,14 @@ Chapter 2: The Office — Coming Soon</div>
     } catch(e) {}
     setTimeout(() => playNote(!isC), 1500);
   }
-  
+
   window.audioRampUp = function() {
     if (!audioCtx || !masterGain) return;
     try {
       masterGain.gain.linearRampToValueAtTime(0.44, audioCtx.currentTime + 1.5);
     } catch(e) {}
   };
-  
+
   window.audioRampDown = function() {
     if (!audioCtx || !masterGain) return;
     audioStopped = true;
@@ -289,7 +301,7 @@ Chapter 2: The Office — Coming Soon</div>
       masterGain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 2);
     } catch(e) {}
   };
-  
+
   window.playClickSound = function() {
     if (!audioCtx) return;
     try {
