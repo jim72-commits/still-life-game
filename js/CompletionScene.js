@@ -6,12 +6,14 @@ class CompletionScene extends Phaser.Scene {
   create() {
     this.cameras.main.setBackgroundColor(0x000000);
 
-    const cx = this.cameras.main.centerX;
-    const cy = this.cameras.main.centerY;
+    const W = this.scale.width;
+    const H = this.scale.height;
+    const cx = W / 2;
+    const cy = H / 2;
 
     const title = this.add
-      .text(cx, cy - 60, "Still Life", {
-        fontSize: "44px",
+      .text(cx, cy - 50, "Still Life", {
+        fontSize: Math.max(32, Math.min(44, W * 0.035)) + "px",
         fontFamily: '"Playfair Display", Georgia, serif',
         color: "#c0c0e0",
       })
@@ -19,7 +21,7 @@ class CompletionScene extends Phaser.Scene {
       .setAlpha(0);
 
     const subtitle = this.add
-      .text(cx, cy + 5, "Every room tells a story.\nYou listened.", {
+      .text(cx, cy + 10, "Every room tells a story.\nYou listened.", {
         fontSize: "16px",
         fontFamily: '"Special Elite", "Courier New", monospace',
         color: "#8888aa",
@@ -31,7 +33,7 @@ class CompletionScene extends Phaser.Scene {
 
     const btnW = 200;
     const btnH = 48;
-    const btnY = cy + 100;
+    const btnY = cy + 80;
 
     const btnBg = this.add.graphics().setAlpha(0);
     btnBg.fillStyle(0x2a2a42, 1);
@@ -50,10 +52,7 @@ class CompletionScene extends Phaser.Scene {
 
     this._pendingReturn = false;
 
-    const zone = this.add
-      .zone(cx, btnY, btnW, btnH)
-      .setInteractive({ useHandCursor: true });
-
+    const zone = this.add.zone(cx, btnY, btnW, btnH).setInteractive({ useHandCursor: true });
     zone.input.enabled = false;
 
     zone.on("pointerover", () => btnLabel.setColor("#ffffff"));
@@ -68,32 +67,13 @@ class CompletionScene extends Phaser.Scene {
       }
     });
 
+    this.tweens.add({ targets: title, alpha: 1, duration: 2000, ease: "Cubic.easeOut" });
+    this.tweens.add({ targets: subtitle, alpha: 1, duration: 2000, delay: 1200, ease: "Cubic.easeOut" });
     this.tweens.add({
-      targets: title,
-      alpha: 1,
-      duration: 2000,
-      ease: "Cubic.easeOut",
-    });
-
-    this.tweens.add({
-      targets: subtitle,
-      alpha: 1,
-      duration: 2000,
-      delay: 1200,
-      ease: "Cubic.easeOut",
-    });
-
-    this.tweens.add({
-      targets: [btnBg, btnLabel],
-      alpha: 1,
-      duration: 1500,
-      delay: 3000,
-      ease: "Cubic.easeOut",
+      targets: [btnBg, btnLabel], alpha: 1, duration: 1500, delay: 3000, ease: "Cubic.easeOut",
       onComplete: () => {
         zone.input.enabled = true;
-        if (this._pendingReturn) {
-          this.scene.start("MenuScene");
-        }
+        if (this._pendingReturn) this.scene.start("MenuScene");
       },
     });
   }
