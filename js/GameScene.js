@@ -358,10 +358,144 @@ class GameScene extends Phaser.Scene {
       this.scene.start("MenuScene");
     });
 
+    // Dev cheat trigger — small label at top-right corner of the pause panel
+    const cheatLabel = this.add
+      .text(354, 264, "[~]", {
+        fontSize: "11px",
+        fontFamily: typoOv,
+        color: "#444455",
+      })
+      .setOrigin(1, 0.5)
+      .setInteractive({ useHandCursor: true });
+
+    cheatLabel.on("pointerover", () => cheatLabel.setColor("#888899"));
+    cheatLabel.on("pointerout",  () => cheatLabel.setColor("#444455"));
+    cheatLabel.on("pointerdown", () => {
+      soundManager.playClick();
+      this._openCheatInput();
+    });
+
     this._menuOverlayGroup.add([
       backdrop, panel, title,
       ...resumeBtn, ...menuBtn,
+      cheatLabel,
     ]);
+  }
+
+  // ── Cheat input (developer testing) ─────────────────────
+
+  _openCheatInput() {
+    if (this._cheatOverlay) return;
+
+    const overlay = document.createElement("div");
+    Object.assign(overlay.style, {
+      position: "fixed",
+      top: "50%", left: "50%",
+      transform: "translate(-50%, -50%)",
+      background: "#12121e",
+      border: "1px solid #555577",
+      borderRadius: "10px",
+      padding: "28px 32px 24px",
+      zIndex: "9999",
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      gap: "14px",
+      boxShadow: "0 8px 40px rgba(0,0,0,0.85)",
+      minWidth: "260px",
+      fontFamily: '"Special Elite","Courier New",monospace',
+    });
+
+    const title = document.createElement("div");
+    Object.assign(title.style, { fontSize: "12px", color: "#666677", letterSpacing: "0.12em" });
+    title.textContent = "[ DEV ACCESS ]";
+
+    const input = document.createElement("input");
+    Object.assign(input.style, {
+      fontFamily: '"Special Elite","Courier New",monospace',
+      fontSize: "20px",
+      background: "#0a0a14",
+      border: "1px solid #444466",
+      borderRadius: "6px",
+      color: "#d8d8f0",
+      padding: "10px 16px",
+      outline: "none",
+      textAlign: "center",
+      letterSpacing: "0.25em",
+      width: "180px",
+      boxSizing: "border-box",
+    });
+    input.type = "password";
+    input.maxLength = 10;
+    input.setAttribute("autocomplete", "off");
+    input.setAttribute("autocorrect", "off");
+    input.setAttribute("autocapitalize", "off");
+    input.setAttribute("spellcheck", "false");
+
+    const hint = document.createElement("div");
+    Object.assign(hint.style, { fontSize: "12px", color: "#444455" });
+    hint.textContent = "Enter code";
+
+    overlay.appendChild(title);
+    overlay.appendChild(input);
+    overlay.appendChild(hint);
+    document.body.appendChild(overlay);
+    this._cheatOverlay = overlay;
+
+    setTimeout(() => input.focus(), 80);
+
+    const attempt = () => {
+      const code = input.value.toLowerCase().trim();
+      if (code === "alice") {
+        hint.textContent = "\u2713 Access granted";
+        hint.style.color = "#77cc88";
+        input.style.borderColor = "#44aa66";
+        setTimeout(() => this._runCheat(), 700);
+      } else if (code.length >= 5) {
+        hint.textContent = "Invalid code";
+        hint.style.color = "#cc6666";
+        input.style.borderColor = "#884444";
+        setTimeout(() => {
+          input.value = "";
+          hint.textContent = "Enter code";
+          hint.style.color = "#444455";
+          input.style.borderColor = "#444466";
+        }, 900);
+      }
+    };
+
+    input.addEventListener("input", () => {
+      hint.textContent = "Enter code";
+      hint.style.color = "#444455";
+      input.style.borderColor = "#444466";
+      if (input.value.length === 5) attempt();
+    });
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") attempt();
+      if (e.key === "Escape") this._closeCheatInput();
+    });
+
+    const outside = (e) => {
+      if (!overlay.contains(e.target)) this._closeCheatInput();
+    };
+    overlay._outside = outside;
+    setTimeout(() => document.addEventListener("pointerdown", outside), 200);
+  }
+
+  _closeCheatInput() {
+    if (!this._cheatOverlay) return;
+    const o = this._cheatOverlay;
+    if (o._outside) document.removeEventListener("pointerdown", o._outside);
+    try { document.body.removeChild(o); } catch (_) {}
+    this._cheatOverlay = null;
+  }
+
+  _runCheat() {
+    const lastIndex = GameScene.getAllLevels().length - 1;
+    this._closeCheatInput();
+    this._closeMenuOverlay();
+    GameScene.saveProgress(lastIndex);
+    this.scene.restart({ levelIndex: lastIndex });
   }
 
   _makeOverlayButton(cx, cy, label, callback) {
