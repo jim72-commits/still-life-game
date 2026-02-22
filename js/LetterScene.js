@@ -452,6 +452,7 @@ class LetterScene extends Phaser.Scene {
   _close() {
     if (this._closed) return;
     this._closed = true;
+    console.log('[LetterScene] Close initiated');
 
     // Fade out ambient tone
     try {
@@ -477,16 +478,24 @@ class LetterScene extends Phaser.Scene {
     });
 
     // Clean up DOM immediately (elements are already invisible + non-interactive)
-    // then wait for fade to finish before transitioning to the next scene.
     this._cleanup();
+    console.log('[LetterScene] HTML elements cleaned up');
     
     // Restore Phaser canvas to receive pointer/touch events again
-    try { this.game.canvas.style.pointerEvents = 'auto'; } catch (_) {}
+    if (this.game && this.game.canvas) {
+      this.game.canvas.style.pointerEvents = 'auto';
+      console.log('[LetterScene] Canvas pointer-events restored to:', this.game.canvas.style.pointerEvents);
+    }
     
+    // Wait for fade animation, then explicitly stop this scene before starting next
     setTimeout(() => {
+      console.log('[LetterScene] Stopping LetterScene, starting SummaryScene');
       try {
+        this.scene.stop('LetterScene');
         this.scene.start('SummaryScene');
-      } catch (_) {}
+      } catch (e) {
+        console.error('[LetterScene] Error transitioning:', e);
+      }
     }, 600);
   }
 

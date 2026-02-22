@@ -113,8 +113,9 @@
         localStorage.setItem('stilllife_ch1_current_level', '29');
         localStorage.setItem('stilllife_ch1_first_attempts', '20');
         localStorage.setItem('stilllife_ch1_wrong_total', '5');
+        localStorage.setItem('stilllife_prologue_seen', 'true'); // Skip prologue
       } catch (_) {}
-      alert('Progress set to Level 30.\n\nJust submit the puzzle (tap green button) to trigger:\nLevel 30 → Letter → Summary → Menu');
+      alert('Progress set to Level 30.\n\nSTEPS:\n1. Wait for menu to load\n2. Tap Chapter 1 card\n3. Game loads at Level 30\n4. Tap green Submit button\n5. Watch flow: Level 30 → Letter → Summary\n\nOpen browser console (F12) to see debug logs!');
       window.location.href = 'index.html';
     }
 

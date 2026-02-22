@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Instructions - Still Life</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #1a1a1a;
+      color: #eeeeff;
+      padding: 20px;
+      margin: 0;
+      line-height: 1.6;
+    }
+    h1 { color: #aaaacc; font-size: 24px; margin-bottom: 20px; }
+    h2 { color: #888899; font-size: 18px; margin: 20px 0 10px; }
+    .box {
+      background: #2a2a2e;
+      border: 1px solid #444455;
+      border-radius: 8px;
+      padding: 16px;
+      margin: 12px 0;
+    }
+    .step {
+      background: #2a2a44;
+      border-left: 4px solid #555577;
+      padding: 12px;
+      margin: 8px 0;
+    }
+    .important {
+      background: #4a2a2a;
+      border-left: 4px solid #cc6666;
+      padding: 12px;
+      margin: 12px 0;
+    }
+    code {
+      background: #1a1a1a;
+      padding: 2px 6px;
+      border-radius: 3px;
+      color: #aaaacc;
+      font-family: 'Courier New', monospace;
+    }
+    .btn {
+      display: inline-block;
+      background: #3a3a5a;
+      color: #eeeeff;
+      padding: 12px 24px;
+      text-decoration: none;
+      border-radius: 6px;
+      margin: 8px 8px 8px 0;
+      font-size: 16px;
+    }
+    .btn:hover {
+      background: #4a4a6a;
+    }
+  </style>
+</head>
+<body>
+  <h1>🔍 Summary Screen Bug Test</h1>
+  
+  <div class="important">
+    <strong>⚠️ CRITICAL:</strong> Open browser console (F12 or right-click → Inspect → Console) BEFORE starting the test. You need to see the debug logs.
+  </div>
+
+  <h2>Test Steps:</h2>
+
+  <div class="step">
+    <strong>Step 1:</strong> Click the button below to set up test data
+    <br><br>
+    <a href="#" class="btn" onclick="setupTest(); return false;">Setup Level 30 Test</a>
+  </div>
+
+  <div class="step">
+    <strong>Step 2:</strong> After clicking "Setup", you'll be redirected to the game
+    <ul style="margin: 8px 0;">
+      <li>Wait for menu to load</li>
+      <li>Tap <strong>Chapter 1</strong> card</li>
+      <li>Game will load at <strong>Level 30</strong></li>
+    </ul>
+  </div>
+
+  <div class="step">
+    <strong>Step 3:</strong> On Level 30, tap the green <strong>Submit</strong> button
+    <ul style="margin: 8px 0;">
+      <li>Letter scene will appear</li>
+      <li>Test if letter scrolls</li>
+      <li>Tap <strong>"Accomplishments"</strong> button</li>
+    </ul>
+  </div>
+
+  <div class="step">
+    <strong>Step 4:</strong> On Summary screen (with stats), watch the console
+    <br><br>
+    <strong>Try both buttons:</strong>
+    <ul style="margin: 8px 0;">
+      <li>Tap <strong>"Share Result"</strong> (or "Copy to Clipboard")</li>
+      <li>Tap <strong>"[ Return to Menu ]"</strong></li>
+    </ul>
+  </div>
+
+  <h2>What to Look For in Console:</h2>
+
+  <div class="box">
+    <strong>When SummaryScene loads:</strong>
+    <ul>
+      <li><code>[SummaryScene] Canvas pointer-events set to: auto</code></li>
+      <li><code>[SummaryScene] Cleaned up X orphaned HTML elements</code> (if any)</li>
+    </ul>
+  </div>
+
+  <div class="box">
+    <strong>When you tap anywhere on Summary screen:</strong>
+    <ul>
+      <li><code>Tap at (x, y)</code> - should appear as gray text on screen</li>
+      <li>This confirms Phaser is receiving input</li>
+    </ul>
+  </div>
+
+  <div class="box">
+    <strong>When you tap the buttons:</strong>
+    <ul>
+      <li><code>[SummaryScene] Share button - CLICKED</code></li>
+      <li><code>[SummaryScene] Return to Menu button - CLICKED</code></li>
+    </ul>
+  </div>
+
+  <h2>Report Back:</h2>
+
+  <div class="box">
+    <strong>If buttons work:</strong> Great! Test complete.
+    <br><br>
+    <strong>If buttons don't work:</strong> Copy the console output and report:
+    <ul>
+      <li>Do you see the "Tap at (x, y)" text when tapping?</li>
+      <li>Do you see any button hover/click messages?</li>
+      <li>Any errors in the console?</li>
+    </ul>
+  </div>
+
+  <script>
+    function setupTest() {
+      try {
+        localStorage.setItem('stilllife_ch1_current_level', '29');
+        localStorage.setItem('stilllife_ch1_first_attempts', '20');
+        localStorage.setItem('stilllife_ch1_wrong_total', '5');
+        localStorage.setItem('stilllife_prologue_seen', 'true');
+        console.log('✅ Test data configured:');
+        console.log('  - Current level: 29 (will load Level 30)');
+        console.log('  - Prologue: skipped');
+        console.log('Redirecting to game...');
+        setTimeout(() => {
+          window.location.href = 'index.html';
+        }, 1000);
+        alert('✅ Test data set!\n\nConsole is logging. Redirecting to game...\n\n1. Tap Chapter 1\n2. Submit Level 30\n3. Watch console logs');
+      } catch (e) {
+        alert('❌ Error: ' + e.message);
+      }
+    }
+  </script>
+</body>
+</html>

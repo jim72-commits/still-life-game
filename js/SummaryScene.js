@@ -6,16 +6,27 @@ class SummaryScene extends Phaser.Scene {
   create() {
     // Ensure the Phaser canvas can receive input (guards against LetterScene
     // having disabled pointer events for its HTML scroll overlay).
-    try { this.sys.game.canvas.style.pointerEvents = 'auto'; } catch (_) {}
+    const canvas = this.sys.game.canvas;
+    if (canvas) {
+      canvas.style.pointerEvents = 'auto';
+      console.log('[SummaryScene] Canvas pointer-events set to:', canvas.style.pointerEvents);
+    }
 
     // Aggressively remove any LetterScene HTML that might still exist
     const cleanupIds = ['sl-paper-svg', 'sl-backdrop', 'sl-paper', 'sl-chevron', 'sl-close-btn'];
+    let foundOrphans = 0;
     cleanupIds.forEach(id => {
       try {
         const el = document.getElementById(id);
-        if (el) document.body.removeChild(el);
+        if (el) {
+          document.body.removeChild(el);
+          foundOrphans++;
+        }
       } catch (_) {}
     });
+    if (foundOrphans > 0) {
+      console.log('[SummaryScene] Cleaned up', foundOrphans, 'orphaned HTML elements');
+    }
 
     const cx = 200;
     const raw = GameScene.loadStats();
@@ -200,9 +211,16 @@ class SummaryScene extends Phaser.Scene {
       .setInteractive({ useHandCursor: true })
       .setDepth(100);
 
-    zone.on("pointerover", () => drawBtn(0x44443a, 0x777760));
-    zone.on("pointerout", () => drawBtn(0x333328, 0x555540));
+    zone.on("pointerover", () => {
+      console.log('[SummaryScene] Share button - hover');
+      drawBtn(0x44443a, 0x777760);
+    });
+    zone.on("pointerout", () => {
+      console.log('[SummaryScene] Share button - out');
+      drawBtn(0x333328, 0x555540);
+    });
     zone.on("pointerdown", () => {
+      console.log('[SummaryScene] Share button - CLICKED');
       soundManager.playClick();
       if (navigator.share) {
         navigator
@@ -273,13 +291,21 @@ class SummaryScene extends Phaser.Scene {
       .setInteractive({ useHandCursor: true })
       .setDepth(100);
 
-    zone.on("pointerover", () => draw(0x3a3a5a, 0x7777aa));
-    zone.on("pointerout", () => draw(0x2a2a42, 0x555577));
+    zone.on("pointerover", () => {
+      console.log('[SummaryScene] Return to Menu button - hover');
+      draw(0x3a3a5a, 0x7777aa);
+    });
+    zone.on("pointerout", () => {
+      console.log('[SummaryScene] Return to Menu button - out');
+      draw(0x2a2a42, 0x555577);
+    });
     zone.on("pointerdown", () => {
+      console.log('[SummaryScene] Return to Menu button - CLICKED');
       soundManager.playClick();
       zone.input.enabled = false;
       this.cameras.main.fadeOut(800, 0, 0, 0);
       this.cameras.main.once("camerafadeoutcomplete", () => {
+        console.log('[SummaryScene] Fade complete, starting MenuScene');
         this.scene.start("MenuScene");
       });
     });
