@@ -13,7 +13,7 @@ class CompletionScene extends Phaser.Scene {
       .text(cx, cy - 60, "Still Life", {
         fontSize: "44px",
         fontFamily: '"Playfair Display", Georgia, serif',
-        color: "#c0c0e0",
+        color: "#eeeeff",
       })
       .setOrigin(0.5)
       .setAlpha(0);
@@ -22,7 +22,7 @@ class CompletionScene extends Phaser.Scene {
       .text(cx, cy + 5, "Every room tells a story.\nYou listened.", {
         fontSize: "16px",
         fontFamily: '"Special Elite", "Courier New", monospace',
-        color: "#8888aa",
+        color: "#aaaacc",
         align: "center",
         lineSpacing: 10,
       })

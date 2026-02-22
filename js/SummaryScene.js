@@ -4,7 +4,7 @@ class SummaryScene extends Phaser.Scene {
   }
 
   create() {
-    const cx = 400;
+    const cx = 200;
     const raw = GameScene.loadStats();
     const stats = {
       firstAttempts: this._safeNum(raw.firstAttempts),
@@ -16,31 +16,31 @@ class SummaryScene extends Phaser.Scene {
     const total = GameScene.getAllLevels().length;
     const rating = SummaryScene._calcRating(stats);
     const mono = '"Special Elite", "Courier New", monospace';
-    const rule = "\u2500".repeat(36);
+    const rule = "\u2500".repeat(28);
 
     this.cameras.main.setBackgroundColor(0x0a0a0a);
     this.cameras.main.fadeIn(800, 0, 0, 0);
 
-    this.add.text(cx, 30, rule, { fontSize: "14px", fontFamily: mono, color: "#444466" }).setOrigin(0.5);
+    this.add.text(cx, 30, rule, { fontSize: "14px", fontFamily: mono, color: "#555577" }).setOrigin(0.5);
 
     this.add
       .text(cx, 56, "CASE FILE \u2014 CLOSED", {
-        fontSize: "24px",
+        fontSize: "22px",
         fontFamily: mono,
-        color: "#c0c0dd",
+        color: "#d8d8f0",
         fontStyle: "bold",
       })
       .setOrigin(0.5);
 
     this.add
-      .text(cx, 83, "The House \u2014 Chapter 1", {
+      .text(cx, 82, "The House \u2014 Chapter 1", {
         fontSize: "14px",
         fontFamily: mono,
-        color: "#777799",
+        color: "#9999bb",
       })
       .setOrigin(0.5);
 
-    this.add.text(cx, 100, rule, { fontSize: "14px", fontFamily: mono, color: "#444466" }).setOrigin(0.5);
+    this.add.text(cx, 100, rule, { fontSize: "14px", fontFamily: mono, color: "#555577" }).setOrigin(0.5);
 
     const cap = (n) => Math.min(n, 999);
     const lines = [
@@ -55,47 +55,49 @@ class SummaryScene extends Phaser.Scene {
     ];
 
     this.add
-      .text(cx, 192, lines.join("\n"), {
+      .text(cx, 205, lines.join("\n"), {
+        fontSize: "14px",
+        fontFamily: mono,
+        color: "#aaaacc",
+        align: "left",
+        lineSpacing: 6,
+      })
+      .setOrigin(0.5);
+
+    this.add.text(cx, 305, rule, { fontSize: "14px", fontFamily: mono, color: "#555577" }).setOrigin(0.5);
+
+    this.add
+      .text(cx, 326, "INVESTIGATOR RATING:", {
         fontSize: "14px",
         fontFamily: mono,
         color: "#9999bb",
-        align: "left",
-        lineSpacing: 5,
-      })
-      .setOrigin(0.5);
-
-    this.add.text(cx, 298, rule, { fontSize: "14px", fontFamily: mono, color: "#444466" }).setOrigin(0.5);
-
-    this.add
-      .text(cx, 320, "INVESTIGATOR RATING:", {
-        fontSize: "14px",
-        fontFamily: mono,
-        color: "#777799",
       })
       .setOrigin(0.5);
 
     this.add
-      .text(cx, 344, rating, {
+      .text(cx, 352, rating, {
         fontSize: "20px",
         fontFamily: mono,
-        color: "#ddddff",
+        color: "#eeeeff",
         fontStyle: "bold",
       })
       .setOrigin(0.5);
 
-    this.add.text(cx, 368, rule, { fontSize: "14px", fontFamily: mono, color: "#444466" }).setOrigin(0.5);
+    this.add.text(cx, 374, rule, { fontSize: "14px", fontFamily: mono, color: "#555577" }).setOrigin(0.5);
 
-    this._createShareSection(cx, 420, rating, mono);
+    this._createShareSection(cx, 422, rating, mono);
 
     this.add
       .text(cx, 490, "\u201cSome things take time to find their place.\u201d", {
-        fontSize: "14px",
+        fontSize: "13px",
         fontFamily: mono,
-        color: "#666688",
+        color: "#777799",
+        align: "center",
+        wordWrap: { width: 340 },
       })
       .setOrigin(0.5);
 
-    this._createContinueButton(cx, 540, mono);
+    this._createContinueButton(cx, 545, mono);
 
     GameScene.saveCompletion(rating, stats);
     Analytics.chapterComplete("The House", rating);
@@ -108,14 +110,14 @@ class SummaryScene extends Phaser.Scene {
 
   _line(label, value) {
     const s = String(value);
-    const gap = 34 - label.length - s.length;
+    const gap = 28 - label.length - s.length;
     return label + " " + ".".repeat(Math.max(gap, 2)) + " " + s;
   }
 
   // ── Share section ──────────────────────────────────────
 
   _createShareSection(cx, cy, rating, mono) {
-    const noteW = 420;
+    const noteW = 340;
     const noteH = 72;
     const noteX = cx - noteW / 2;
     const noteY = cy - noteH / 2;

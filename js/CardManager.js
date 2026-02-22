@@ -195,7 +195,8 @@ class CardManager {
   }
 
   _findNearestSlot(x, y) {
-    const threshold = 80;
+    // Generous overlap detection: use 25% of card width as threshold
+    const threshold = Math.max(50, this.cardW * 0.6);
     let best = null;
     let bestDist = Infinity;
     this.slots.forEach((slot, i) => {

@@ -7,23 +7,24 @@ class PrologueScene extends Phaser.Scene {
     this._done = false;
     this.cameras.main.setBackgroundColor(0x000000);
 
-    const cx = 400;
-    const cy = 300;
+    const cx = 200;
+    const cy = 350;
     const typo = '"Special Elite", "Courier New", monospace';
 
     const lines = [
-      { text: "This is a house.", y: cy - 40 },
+      { text: "This is a house.", y: cy - 46 },
       { text: "These are the things left behind.", y: cy },
-      { text: "You are here to understand what happened.", y: cy + 40 },
+      { text: "You are here to understand what happened.", y: cy + 46 },
     ];
 
     const textObjects = lines.map((ln) =>
       this.add
         .text(cx, ln.y, ln.text, {
-          fontSize: "18px",
+          fontSize: "17px",
           fontFamily: typo,
-          color: "#d8d8d8",
+          color: "#e0e0e8",
           align: "center",
+          wordWrap: { width: 340 },
         })
         .setOrigin(0.5)
         .setAlpha(0)
@@ -52,10 +53,10 @@ class PrologueScene extends Phaser.Scene {
     });
 
     const skipLabel = this.add
-      .text(760, 575, "[ Skip ]", {
-        fontSize: "12px",
+      .text(362, 672, "[ Skip ]", {
+        fontSize: "13px",
         fontFamily: typo,
-        color: "#555577",
+        color: "#666688",
       })
       .setOrigin(0.5)
       .setInteractive({ useHandCursor: true });
