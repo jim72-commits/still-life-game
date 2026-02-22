@@ -1,7 +1,6 @@
 class SoundManager {
   constructor() {
     this.ctx = null;
-    this.masterGain = null;
     this.muted = false;
     this.ambientSource = null;
     this.ambientGain = null;
@@ -12,31 +11,28 @@ class SoundManager {
     this._bindGestureListeners();
   }
 
-  // iOS WebKit requires AudioContext creation + an oscillator.start()
-  // call to happen synchronously inside a user gesture handler.
-  // We listen on capture phase so Phaser's canvas can't swallow the event.
+  // iOS WebKit blocks AudioContext until a real audio node is started
+  // synchronously inside a user gesture. We use the howler.js-proven
+  // pattern: createBuffer(1,1,22050) + bufferSource.start(0).
+  // Listeners stay active and retry on every gesture until the context
+  // reaches "running" state, because resume() is async and may not
+  // succeed on the first tap.
   _bindGestureListeners() {
-    const handler = () => {
-      this._initAndUnlock();
-      this.playAmbient();
-    };
-
+    const handler = () => this._initAndUnlock();
     const opts = { capture: true, passive: true };
-
-    ["touchstart", "touchend", "click", "pointerdown"].forEach(evt => {
+    ["touchstart", "touchend", "click", "pointerdown", "keydown"].forEach(evt => {
       document.addEventListener(evt, handler, opts);
     });
-
     this._gestureHandler = handler;
     this._gestureOpts = opts;
   }
 
   _removeGestureListeners() {
     if (!this._gestureHandler) return;
-    const handler = this._gestureHandler;
-    const opts = this._gestureOpts;
-    ["touchstart", "touchend", "click", "pointerdown"].forEach(evt => {
-      document.removeEventListener(evt, handler, opts);
+    const h = this._gestureHandler;
+    const o = this._gestureOpts;
+    ["touchstart", "touchend", "click", "pointerdown", "keydown"].forEach(evt => {
+      document.removeEventListener(evt, h, o);
     });
     this._gestureHandler = null;
   }
@@ -47,46 +43,43 @@ class SoundManager {
     if (!this.ctx) {
       try {
         const Ctor = window.AudioContext || window.webkitAudioContext;
-        if (!Ctor) {
-          this._available = false;
-          return;
-        }
+        if (!Ctor) { this._available = false; return; }
         this.ctx = new Ctor();
-      } catch (_) {
-        this._available = false;
-        return;
-      }
+      } catch (_) { this._available = false; return; }
     }
 
+    if (this.ctx.state === "running") {
+      this._unlocked = true;
+      this._removeGestureListeners();
+      this.playAmbient();
+      return;
+    }
+
+    // Synchronous silent buffer play (proven iOS unlock via howler.js)
     try {
-      // Play a silent oscillator synchronously to unlock iOS audio
-      const osc = this.ctx.createOscillator();
-      const gain = this.ctx.createGain();
-      gain.gain.value = 0;
-      osc.connect(gain);
-      gain.connect(this.ctx.destination);
-      osc.start(0);
-      osc.stop(this.ctx.currentTime + 0.001);
-      osc.onended = () => {
-        try { osc.disconnect(); gain.disconnect(); } catch (_) {}
-      };
+      const buf = this.ctx.createBuffer(1, 1, 22050);
+      const src = this.ctx.createBufferSource();
+      src.buffer = buf;
+      src.connect(this.ctx.destination);
+      src.start(0);
     } catch (_) {}
 
-    if (this.ctx.state === "suspended") {
-      this.ctx.resume();
-    }
-
-    this._unlocked = true;
-    this._removeGestureListeners();
+    // resume() is async on iOS -- only mark unlocked when it resolves
+    try {
+      this.ctx.resume().then(() => {
+        if (!this._unlocked) {
+          this._unlocked = true;
+          this._removeGestureListeners();
+          this.playAmbient();
+        }
+      }).catch(() => {});
+    } catch (_) {}
   }
 
   _getCtx() {
-    if (!this._available || !this.ctx) return null;
-    if (!this._unlocked) return null;
+    if (!this._available || !this.ctx || !this._unlocked) return null;
     try {
-      if (this.ctx.state === "suspended") {
-        this.ctx.resume();
-      }
+      if (this.ctx.state === "suspended") this.ctx.resume();
     } catch (_) {}
     return this.ctx;
   }
