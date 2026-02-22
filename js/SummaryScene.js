@@ -4,6 +4,10 @@ class SummaryScene extends Phaser.Scene {
   }
 
   create() {
+    // Ensure the Phaser canvas can receive input (guards against LetterScene
+    // having disabled pointer events for its HTML scroll overlay).
+    try { this.sys.game.canvas.style.pointerEvents = 'auto'; } catch (_) {}
+
     const cx = 200;
     const raw = GameScene.loadStats();
     const stats = {

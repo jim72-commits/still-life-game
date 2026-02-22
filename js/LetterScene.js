@@ -477,8 +477,8 @@ class LetterScene extends Phaser.Scene {
     // After fade completes, clean up DOM and go to accomplishment screen
     setTimeout(() => {
       this._cleanup();
-      // Restore Phaser canvas to receive events again
-      try { this.game.canvas.style.pointerEvents = ''; } catch (_) {}
+      // Restore Phaser canvas to receive pointer/touch events again
+      try { this.game.canvas.style.pointerEvents = 'auto'; } catch (_) {}
       try {
         this.scene.start('SummaryScene');
       } catch (_) {}
