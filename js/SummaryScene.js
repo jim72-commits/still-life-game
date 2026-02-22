@@ -230,7 +230,7 @@ class SummaryScene extends Phaser.Scene {
     draw(0x2a2a42, 0x555577);
 
     this.add
-      .text(cx, cy, "[ View Ending ]", {
+      .text(cx, cy, "[ Continue ]", {
         fontSize: "16px",
         fontFamily: mono,
         color: "#aaaacc",
@@ -248,7 +248,7 @@ class SummaryScene extends Phaser.Scene {
       zone.input.enabled = false;
       this.cameras.main.fadeOut(800, 0, 0, 0);
       this.cameras.main.once("camerafadeoutcomplete", () => {
-        this.scene.start("EndingScene");
+        this.scene.start("LetterScene");
       });
     });
   }

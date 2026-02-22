@@ -357,7 +357,7 @@ class LetterScene extends Phaser.Scene {
       zIndex: '700',
       outline: 'none', WebkitAppearance: 'none', appearance: 'none',
     });
-    btn.textContent = 'Close';
+    btn.textContent = 'Return to Menu';
     btn.addEventListener('mouseover', () => {
       btn.style.color = '#d8d8e8';
       btn.style.borderColor = '#666677';

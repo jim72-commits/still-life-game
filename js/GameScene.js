@@ -358,19 +358,23 @@ class GameScene extends Phaser.Scene {
       this.scene.start("MenuScene");
     });
 
-    // Dev cheat trigger — small label at top-right corner of the pause panel
-    const cheatLabel = this.add
-      .text(354, 264, "[~]", {
-        fontSize: "11px",
-        fontFamily: typoOv,
-        color: "#444455",
-      })
-      .setOrigin(1, 0.5)
+    // Dev cheat trigger — top-right corner of the pause panel.
+    // A 44×44 invisible hit zone ensures reliable taps on mobile.
+    const cheatHit = this.add
+      .rectangle(348, 264, 44, 44, 0x000000, 0)
       .setInteractive({ useHandCursor: true });
 
-    cheatLabel.on("pointerover", () => cheatLabel.setColor("#888899"));
-    cheatLabel.on("pointerout",  () => cheatLabel.setColor("#444455"));
-    cheatLabel.on("pointerdown", () => {
+    const cheatLabel = this.add
+      .text(348, 264, "[~]", {
+        fontSize: "13px",
+        fontFamily: typoOv,
+        color: "#667788",
+      })
+      .setOrigin(0.5, 0.5);
+
+    cheatHit.on("pointerover", () => cheatLabel.setColor("#aabbcc"));
+    cheatHit.on("pointerout",  () => cheatLabel.setColor("#667788"));
+    cheatHit.on("pointerdown", () => {
       soundManager.playClick();
       this._openCheatInput();
     });
@@ -378,7 +382,7 @@ class GameScene extends Phaser.Scene {
     this._menuOverlayGroup.add([
       backdrop, panel, title,
       ...resumeBtn, ...menuBtn,
-      cheatLabel,
+      cheatHit, cheatLabel,
     ]);
   }
 
