@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>Still Life — Ending</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
@@ -21,23 +21,23 @@ html, body {
   display:flex; flex-direction:column;
   align-items:center; justify-content:center;
   opacity:0;
-  padding: 0 max(5vw, env(safe-area-inset-left)) 0 max(5vw, env(safe-area-inset-right));
+  padding:0 10vw;
   text-align:center;
 }
 
 #card-room {
-  font: 12px/1 Arial, sans-serif;
+  font: 11px/1 Arial, sans-serif;
   letter-spacing: .22em;
   text-transform: uppercase;
   color: #555566;
   margin-bottom: 22px;
-  min-height: 16px;
+  min-height: 14px;
 }
 
 #card-text {
-  font: italic 24px/1.5 Georgia, serif;
+  font: italic 26px/1.5 Georgia, serif;
   color: #d8d8e8;
-  max-width: 70vw;
+  max-width: 560px;
 }
 
 #card-accent {
@@ -51,19 +51,16 @@ html, body {
   position:fixed; inset:0;
   display:flex; align-items:center; justify-content:center;
   opacity:0; visibility:hidden;
-  padding: 0 max(5vw, env(safe-area-inset-left)) 0 max(5vw, env(safe-area-inset-right));
 }
 
 #final-text {
-  font: italic 22px/1.6 Georgia, serif;
+  font: italic 24px/1.6 Georgia, serif;
   color: #ffffff;
-  max-width: 70vw;
-  white-space: normal;
-  text-align: center;
+  white-space: nowrap;
 }
 
 #final-cursor {
-  font: italic 22px/1.6 Georgia, serif;
+  font: italic 24px/1.6 Georgia, serif;
   color: rgba(255,255,255,0.7);
   margin-left: 2px;
   opacity: 0;
@@ -83,15 +80,14 @@ html, body {
   width: min(500px, 86vw);
   text-align:center;
   white-space:pre-line;
-  font: 16px/2 'Courier New', Courier, monospace;
+  font: 13px/2 'Courier New', Courier, monospace;
   color:#7777aa;
-  padding: 0 max(16px, env(safe-area-inset-left)) 0 max(16px, env(safe-area-inset-right));
 }
 
 #skip {
-  position:fixed; bottom:24px; right: max(28px, env(safe-area-inset-right, 28px));
+  position:fixed; bottom:24px; right:28px;
   z-index:9999; cursor:pointer;
-  font: 16px Arial, sans-serif;
+  font: 13px Arial, sans-serif;
   color:#555577;
   letter-spacing:.08em;
   user-select:none;
@@ -105,7 +101,7 @@ html, body {
   border-radius:4px;
 }
 
-/* ── Rotate overlay (portrait on mobile) ── */
+/* ── Rotate overlay (landscape on mobile) ── */
 #rotate-overlay {
   position:fixed; inset:0;
   display:none;
@@ -117,25 +113,25 @@ html, body {
   font-family: 'Courier New', Courier, monospace;
 }
 .rotate-phone {
-  width:36px; height:62px;
+  width:62px; height:36px;
   border:3px solid #555577;
   border-radius:8px;
   margin-bottom:28px;
   position:relative;
-  animation: rotate-to-landscape 2.5s ease-in-out infinite;
+  animation: rotate-to-portrait 2.5s ease-in-out infinite;
 }
 .rotate-phone::after {
   content:'';
   position:absolute;
-  bottom:5px; left:50%;
-  transform:translateX(-50%);
-  width:8px; height:3px;
+  right:5px; top:50%;
+  transform:translateY(-50%);
+  width:3px; height:8px;
   border-radius:2px;
   background:#555577;
 }
-@keyframes rotate-to-landscape {
+@keyframes rotate-to-portrait {
   0%, 25%  { transform: rotate(0deg); }
-  45%, 75% { transform: rotate(-90deg); }
+  45%, 75% { transform: rotate(90deg); }
   100%     { transform: rotate(0deg); }
 }
 .rotate-text {
@@ -148,11 +144,8 @@ html, body {
   color:#666688;
 }
 
-@media screen and (orientation: portrait) and (max-width: 768px) {
+@media screen and (orientation: landscape) and (max-height: 500px) {
   #rotate-overlay { display: flex; }
-}
-@media screen and (orientation: landscape), screen and (min-width: 769px) {
-  #rotate-overlay { display: none !important; }
 }
 </style>
 </head>
@@ -161,7 +154,7 @@ html, body {
 <div id="rotate-overlay">
   <div class="rotate-phone"></div>
   <div class="rotate-text">Please rotate your device</div>
-  <div class="rotate-subtext">Still Life is best played in landscape</div>
+  <div class="rotate-subtext">Still Life is best played in portrait</div>
 </div>
 
 <div id="card">
@@ -298,20 +291,33 @@ Chapter 2: The Office — Coming Soon</div>
     if (localStorage.getItem("stilllife_muted") === "true") return;
   } catch(_) {}
 
+  // iOS WebKit blocks audio until a real audio node is started
+  // synchronously inside a user gesture. Uses the howler.js-proven
+  // pattern: createBuffer(1,1,22050) + bufferSource.start(0).
+  // Listeners stay active and retry every gesture until resume()
+  // resolves and the context reaches "running" state.
   function onGesture() {
     if (unlocked) return;
+
     try {
       if (!audioCtx) {
         var Ctor = window.AudioContext || window.webkitAudioContext;
         if (!Ctor) return;
         audioCtx = new Ctor();
       }
-      if (audioCtx.state === 'running') { finishUnlock(); return; }
+
+      if (audioCtx.state === 'running') {
+        finishUnlock();
+        return;
+      }
+
+      // Silent buffer unlock (proven on iOS via howler.js)
       var buf = audioCtx.createBuffer(1, 1, 22050);
       var src = audioCtx.createBufferSource();
       src.buffer = buf;
       src.connect(audioCtx.destination);
       src.start(0);
+
       audioCtx.resume().then(function() {
         if (!unlocked) finishUnlock();
       }).catch(function() {});
@@ -321,19 +327,26 @@ Chapter 2: The Office — Coming Soon</div>
   function finishUnlock() {
     unlocked = true;
     removeGestureListeners();
+
     masterGain = audioCtx.createGain();
     masterGain.gain.setValueAtTime(0, audioCtx.currentTime);
     masterGain.gain.linearRampToValueAtTime(0.28, audioCtx.currentTime + 2.5);
     masterGain.connect(audioCtx.destination);
+
     playNote(true);
   }
 
   var gestureEvents = ['touchstart', 'touchend', 'click', 'pointerdown', 'keydown'];
   var gestureOpts = { capture: true, passive: true };
-  gestureEvents.forEach(function(evt) { document.addEventListener(evt, onGesture, gestureOpts); });
+
+  gestureEvents.forEach(function(evt) {
+    document.addEventListener(evt, onGesture, gestureOpts);
+  });
 
   function removeGestureListeners() {
-    gestureEvents.forEach(function(evt) { document.removeEventListener(evt, onGesture, gestureOpts); });
+    gestureEvents.forEach(function(evt) {
+      document.removeEventListener(evt, onGesture, gestureOpts);
+    });
   }
 
   function playNote(isC) {
@@ -350,20 +363,26 @@ Chapter 2: The Office — Coming Soon</div>
       g.connect(masterGain);
       osc.start(t);
       osc.stop(t + 1.4);
-      osc.onended = function() { try { osc.disconnect(); g.disconnect(); } catch(e) {} };
+      osc.onended = function() {
+        try { osc.disconnect(); g.disconnect(); } catch(e) {}
+      };
     } catch(e) {}
     setTimeout(() => playNote(!isC), 1500);
   }
 
   window.audioRampUp = function() {
     if (!audioCtx || !masterGain) return;
-    try { masterGain.gain.linearRampToValueAtTime(0.44, audioCtx.currentTime + 1.5); } catch(e) {}
+    try {
+      masterGain.gain.linearRampToValueAtTime(0.44, audioCtx.currentTime + 1.5);
+    } catch(e) {}
   };
 
   window.audioRampDown = function() {
     if (!audioCtx || !masterGain) return;
     audioStopped = true;
-    try { masterGain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 2); } catch(e) {}
+    try {
+      masterGain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 2);
+    } catch(e) {}
   };
 
   window.playClickSound = function() {
@@ -380,23 +399,12 @@ Chapter 2: The Office — Coming Soon</div>
       g.connect(audioCtx.destination);
       osc.start(t);
       osc.stop(t + 0.1);
-      osc.onended = function() { try { osc.disconnect(); g.disconnect(); } catch(e) {} };
+      osc.onended = function() {
+        try { osc.disconnect(); g.disconnect(); } catch(e) {}
+      };
     } catch(e) {}
   };
 })();
-
-// ══════════════════════════════════════
-// ORIENTATION DETECTION — pause/resume GSAP
-// ══════════════════════════════════════
-var _portraitQuery = window.matchMedia("(orientation: portrait) and (max-width: 768px)");
-function _handleOrientation(e) {
-  if (e.matches) {
-    if (typeof tl !== 'undefined' && tl.isActive && tl.isActive()) tl.pause();
-  } else {
-    if (typeof tl !== 'undefined' && tl.paused && tl.paused()) tl.resume();
-  }
-}
-_portraitQuery.addEventListener("change", _handleOrientation);
 
 // ══════════════════════════════════════
 // GSAP TIMELINE SEQUENCE
@@ -424,58 +432,115 @@ const skipBtn = document.getElementById('skip');
 
 const tl = gsap.timeline({ paused: false });
 
+// ── Scene sequence ──
 SCENES.forEach((scene, idx) => {
   tl.call(() => {
     cardRoom.textContent = scene.room;
     cardText.textContent = scene.text;
   });
+  
   tl.set('#card', { y: 12, opacity: 0 });
-  tl.to('#card', { opacity: 1, y: 0, duration: 0.9, ease: 'power2.out' });
+  
+  tl.to('#card', {
+    opacity: 1,
+    y: 0,
+    duration: 0.9,
+    ease: 'power2.out'
+  });
+  
   tl.to('#card', { duration: 3.0 });
-  tl.to('#card', { opacity: 0, y: -8, duration: 0.7, ease: 'power2.in' });
+  
+  tl.to('#card', {
+    opacity: 0,
+    y: -8,
+    duration: 0.7,
+    ease: 'power2.in'
+  });
+  
   tl.to('#card', { duration: 0.35 });
 });
 
+// ── Final text sequence ──
 tl.set('#final-wrap', { visibility: 'visible' });
-tl.call(() => { if (window.audioRampUp) window.audioRampUp(); });
+
+tl.call(() => {
+  if (window.audioRampUp) window.audioRampUp();
+});
+
 tl.to('#final-wrap', { opacity: 1, duration: 1.2, ease: 'power1.in' });
 
 const counter = { val: 0 };
 tl.call(() => {
   finalText.textContent = '';
   gsap.to('#final-cursor', {
-    opacity: 0, duration: 0.5, repeat: -1, yoyo: true, ease: 'none', id: 'cursorBlink'
+    opacity: 0,
+    duration: 0.5,
+    repeat: -1,
+    yoyo: true,
+    ease: 'none',
+    id: 'cursorBlink'
   });
 });
 
 tl.to(counter, {
-  val: FINAL_TEXT.length, duration: 4.2, ease: 'none',
-  onUpdate: () => { finalText.textContent = FINAL_TEXT.substring(0, Math.round(counter.val)); }
+  val: FINAL_TEXT.length,
+  duration: 4.2,
+  ease: 'none',
+  onUpdate: () => {
+    finalText.textContent = FINAL_TEXT.substring(0, Math.round(counter.val));
+  }
 });
 
 tl.to({}, { duration: 2.0 });
+
 tl.call(() => gsap.killTweensOf('#final-cursor'));
+
 tl.to('#final-wrap', { opacity: 0, duration: 1.5, ease: 'power1.in' });
+
 tl.to({}, { duration: 1.0 });
 
+// ── Credits sequence ──
 tl.set('#credits-wrap', { visibility: 'visible', opacity: 1 });
-tl.call(() => { if (window.audioRampDown) window.audioRampDown(); });
-tl.fromTo('#credits-inner', { y: '100vh' }, { y: '-100%', duration: 65, ease: 'none' });
-tl.call(() => { setTimeout(() => { window.location.href = 'index.html?scene=completion'; }, 1800); });
 
+tl.call(() => {
+  if (window.audioRampDown) window.audioRampDown();
+});
+
+tl.fromTo('#credits-inner',
+  { y: '100vh' },
+  { y: '-100%', duration: 65, ease: 'none' }
+);
+
+tl.call(() => {
+  setTimeout(() => {
+    window.location.href = 'index.html?scene=completion';
+  }, 1800);
+});
+
+// ── Skip button ──
 skipBtn.addEventListener('click', () => {
   if (window.playClickSound) window.playClickSound();
+  
+  // Kill all tweens and jump to credits end
   tl.kill();
+  
+  // Hide all elements
   gsap.set('#card', { opacity: 0 });
   gsap.set('#final-wrap', { opacity: 0, visibility: 'hidden' });
   gsap.killTweensOf('#final-cursor');
+  
+  // Show credits at fast speed
   gsap.set('#credits-wrap', { visibility: 'visible', opacity: 1 });
   gsap.fromTo('#credits-inner',
     { y: '100vh' },
     { y: '-100%', duration: 1, ease: 'none', onComplete: () => {
-      setTimeout(() => { window.location.href = 'index.html?scene=completion'; }, 200);
+      setTimeout(() => {
+        window.location.href = 'index.html?scene=completion';
+      }, 200);
     }}
   );
+  
+  // Fade out audio
   if (window.audioRampDown) window.audioRampDown();
 });
 </script>

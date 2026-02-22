@@ -4,8 +4,7 @@ class SummaryScene extends Phaser.Scene {
   }
 
   create() {
-    const W = this.scale.width;
-    const H = this.scale.height;
+    const cx = 400;
     const raw = GameScene.loadStats();
     const stats = {
       firstAttempts: this._safeNum(raw.firstAttempts),
@@ -17,51 +16,31 @@ class SummaryScene extends Phaser.Scene {
     const total = GameScene.getAllLevels().length;
     const rating = SummaryScene._calcRating(stats);
     const mono = '"Special Elite", "Courier New", monospace';
-    const rule = "\u2500".repeat(28);
+    const rule = "\u2500".repeat(36);
 
     this.cameras.main.setBackgroundColor(0x0a0a0a);
     this.cameras.main.fadeIn(800, 0, 0, 0);
 
-    const leftCx = W * 0.25;
-    const rightCx = W * 0.75;
-    const divX = W * 0.5;
-    const pad = 24;
+    this.add.text(cx, 30, rule, { fontSize: "14px", fontFamily: mono, color: "#444466" }).setOrigin(0.5);
 
-    // Vertical divider
-    const divGfx = this.add.graphics();
-    divGfx.lineStyle(1, 0x222233, 0.5);
-    divGfx.lineBetween(divX, H * 0.08, divX, H * 0.92);
+    this.add
+      .text(cx, 56, "CASE FILE \u2014 CLOSED", {
+        fontSize: "24px",
+        fontFamily: mono,
+        color: "#c0c0dd",
+        fontStyle: "bold",
+      })
+      .setOrigin(0.5);
 
-    // ── Left half: case file header + rating ──
+    this.add
+      .text(cx, 83, "The House \u2014 Chapter 1", {
+        fontSize: "14px",
+        fontFamily: mono,
+        color: "#777799",
+      })
+      .setOrigin(0.5);
 
-    this.add.text(leftCx, H * 0.1, rule, { fontSize: "13px", fontFamily: mono, color: "#444466" }).setOrigin(0.5);
-
-    this.add.text(leftCx, H * 0.18, "CASE FILE \u2014 CLOSED", {
-      fontSize: Math.max(18, Math.min(24, W * 0.02)) + "px",
-      fontFamily: mono, color: "#c0c0dd", fontStyle: "bold",
-    }).setOrigin(0.5);
-
-    this.add.text(leftCx, H * 0.26, "The House \u2014 Chapter 1", {
-      fontSize: "13px", fontFamily: mono, color: "#777799",
-    }).setOrigin(0.5);
-
-    this.add.text(leftCx, H * 0.32, rule, { fontSize: "13px", fontFamily: mono, color: "#444466" }).setOrigin(0.5);
-
-    this.add.text(leftCx, H * 0.50, "INVESTIGATOR RATING:", {
-      fontSize: "13px", fontFamily: mono, color: "#777799",
-    }).setOrigin(0.5);
-
-    this.add.text(leftCx, H * 0.58, rating, {
-      fontSize: "20px", fontFamily: mono, color: "#ddddff", fontStyle: "bold",
-    }).setOrigin(0.5);
-
-    this.add.text(leftCx, H * 0.68, rule, { fontSize: "13px", fontFamily: mono, color: "#444466" }).setOrigin(0.5);
-
-    this.add.text(leftCx, H * 0.78, "\u201cSome things take time\nto find their place.\u201d", {
-      fontSize: "13px", fontFamily: mono, color: "#666688", align: "center", lineSpacing: 4,
-    }).setOrigin(0.5);
-
-    // ── Right half: stats + share + continue ──
+    this.add.text(cx, 100, rule, { fontSize: "14px", fontFamily: mono, color: "#444466" }).setOrigin(0.5);
 
     const cap = (n) => Math.min(n, 999);
     const lines = [
@@ -75,13 +54,48 @@ class SummaryScene extends Phaser.Scene {
       this._line("    Reveal", cap(stats.revealTotal)),
     ];
 
-    this.add.text(rightCx, H * 0.12, lines.join("\n"), {
-      fontSize: "13px", fontFamily: mono, color: "#9999bb",
-      align: "left", lineSpacing: 4,
-    }).setOrigin(0.5, 0);
+    this.add
+      .text(cx, 192, lines.join("\n"), {
+        fontSize: "14px",
+        fontFamily: mono,
+        color: "#9999bb",
+        align: "left",
+        lineSpacing: 5,
+      })
+      .setOrigin(0.5);
 
-    this._createShareSection(rightCx, H * 0.65, rating, mono, W);
-    this._createContinueButton(rightCx, H * 0.87, mono);
+    this.add.text(cx, 298, rule, { fontSize: "14px", fontFamily: mono, color: "#444466" }).setOrigin(0.5);
+
+    this.add
+      .text(cx, 320, "INVESTIGATOR RATING:", {
+        fontSize: "14px",
+        fontFamily: mono,
+        color: "#777799",
+      })
+      .setOrigin(0.5);
+
+    this.add
+      .text(cx, 344, rating, {
+        fontSize: "20px",
+        fontFamily: mono,
+        color: "#ddddff",
+        fontStyle: "bold",
+      })
+      .setOrigin(0.5);
+
+    this.add.text(cx, 368, rule, { fontSize: "14px", fontFamily: mono, color: "#444466" }).setOrigin(0.5);
+
+    this._createShareSection(cx, 420, rating, mono);
+
+    this.add
+      .text(cx, 490, "\u201cSome things take time to find their place.\u201d", {
+        fontSize: "14px",
+        fontFamily: mono,
+        color: "#666688",
+      })
+      .setOrigin(0.5);
+
+    this._createContinueButton(cx, 540, mono);
 
     GameScene.saveCompletion(rating, stats);
     Analytics.chapterComplete("The House", rating);
@@ -94,32 +108,41 @@ class SummaryScene extends Phaser.Scene {
 
   _line(label, value) {
     const s = String(value);
-    const gap = 28 - label.length - s.length;
+    const gap = 34 - label.length - s.length;
     return label + " " + ".".repeat(Math.max(gap, 2)) + " " + s;
   }
 
   // ── Share section ──────────────────────────────────────
 
-  _createShareSection(cx, cy, rating, mono, W) {
-    const noteW = Math.min(380, W * 0.4);
-    const noteH = 64;
+  _createShareSection(cx, cy, rating, mono) {
+    const noteW = 420;
+    const noteH = 72;
+    const noteX = cx - noteW / 2;
+    const noteY = cy - noteH / 2;
 
     const note = this.add.graphics();
     note.fillStyle(0x2a2a1e, 0.6);
-    note.fillRoundedRect(cx - noteW / 2, cy - noteH / 2, noteW, noteH, 6);
+    note.fillRoundedRect(noteX, noteY, noteW, noteH, 6);
     note.lineStyle(1, 0x555540, 0.5);
-    note.strokeRoundedRect(cx - noteW / 2, cy - noteH / 2, noteW, noteH, 6);
+    note.strokeRoundedRect(noteX, noteY, noteW, noteH, 6);
 
     const url = window.location.origin + window.location.pathname;
-    this.shareText = `I just solved Still Life: The House as a ${rating}. Can you do better? ${url}`;
+    this.shareText =
+      `I just solved Still Life: The House as a ${rating}. Can you do better? ${url}`;
 
-    this.add.text(cx, cy - 8, this.shareText, {
-      fontSize: "11px", fontFamily: mono, color: "#aaaa88",
-      align: "center", wordWrap: { width: noteW - 20 }, lineSpacing: 2,
-    }).setOrigin(0.5);
+    this.add
+      .text(cx, cy - 10, this.shareText, {
+        fontSize: "12px",
+        fontFamily: mono,
+        color: "#aaaa88",
+        align: "center",
+        wordWrap: { width: noteW - 24 },
+        lineSpacing: 3,
+      })
+      .setOrigin(0.5);
 
-    const btnW = 140;
-    const btnH = 26;
+    const btnW = 160;
+    const btnH = 28;
     const btnY = cy + 24;
 
     const btnBg = this.add.graphics();
@@ -132,18 +155,30 @@ class SummaryScene extends Phaser.Scene {
     };
     drawBtn(0x333328, 0x555540);
 
-    const btnLabel = this.add.text(cx, btnY, this._shareButtonLabel(), {
-      fontSize: "11px", fontFamily: mono, color: "#bbbb99",
-    }).setOrigin(0.5);
+    const btnLabel = this.add
+      .text(cx, btnY, this._shareButtonLabel(), {
+        fontSize: "12px",
+        fontFamily: mono,
+        color: "#bbbb99",
+      })
+      .setOrigin(0.5);
 
-    const zone = this.add.zone(cx, btnY, btnW, btnH).setInteractive({ useHandCursor: true });
+    const zone = this.add
+      .zone(cx, btnY, btnW, btnH)
+      .setInteractive({ useHandCursor: true });
+
     zone.on("pointerover", () => drawBtn(0x44443a, 0x777760));
     zone.on("pointerout", () => drawBtn(0x333328, 0x555540));
     zone.on("pointerdown", () => {
       soundManager.playClick();
       if (navigator.share) {
-        navigator.share({ title: "Still Life", text: this.shareText })
-          .then(() => { soundManager.playCorrect(); btnLabel.setText("Shared!"); btnLabel.setColor("#ccddaa"); })
+        navigator
+          .share({ title: "Still Life", text: this.shareText })
+          .then(() => {
+            soundManager.playCorrect();
+            btnLabel.setText("Shared!");
+            btnLabel.setColor("#ccddaa");
+          })
           .catch(() => this._fallbackCopy(btnLabel));
       } else {
         this._fallbackCopy(btnLabel);
@@ -157,11 +192,17 @@ class SummaryScene extends Phaser.Scene {
         soundManager.playCorrect();
         btnLabel.setText("Copied!");
         btnLabel.setColor("#ccddaa");
-        this.time.delayedCall(2000, () => { btnLabel.setText(this._shareButtonLabel()); btnLabel.setColor("#bbbb99"); });
+        this.time.delayedCall(2000, () => {
+          btnLabel.setText(this._shareButtonLabel());
+          btnLabel.setColor("#bbbb99");
+        });
       }).catch(() => {
         btnLabel.setText("Copy failed");
         btnLabel.setColor("#aa6666");
-        this.time.delayedCall(2000, () => { btnLabel.setText(this._shareButtonLabel()); btnLabel.setColor("#bbbb99"); });
+        this.time.delayedCall(2000, () => {
+          btnLabel.setText(this._shareButtonLabel());
+          btnLabel.setColor("#bbbb99");
+        });
       });
     }
   }
@@ -186,11 +227,18 @@ class SummaryScene extends Phaser.Scene {
     };
     draw(0x2a2a42, 0x555577);
 
-    this.add.text(cx, cy, "[ View Ending ]", {
-      fontSize: "15px", fontFamily: mono, color: "#aaaacc",
-    }).setOrigin(0.5);
+    this.add
+      .text(cx, cy, "[ View Ending ]", {
+        fontSize: "16px",
+        fontFamily: mono,
+        color: "#aaaacc",
+      })
+      .setOrigin(0.5);
 
-    const zone = this.add.zone(cx, cy, btnW, btnH).setInteractive({ useHandCursor: true });
+    const zone = this.add
+      .zone(cx, cy, btnW, btnH)
+      .setInteractive({ useHandCursor: true });
+
     zone.on("pointerover", () => draw(0x3a3a5a, 0x7777aa));
     zone.on("pointerout", () => draw(0x2a2a42, 0x555577));
     zone.on("pointerdown", () => {

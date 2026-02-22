@@ -21,17 +21,13 @@ class GameScene extends Phaser.Scene {
 
     this.levelStats = { wrong: 0, focus: 0, clue: 0, reveal: 0, skipped: false };
 
-    const W = this.scale.width;
-    const H = this.scale.height;
+    this._drawRoom(level);
+    this._drawSlots(level);
+    this._createCards(level);
 
-    this._drawDivider(W, H);
-    this._drawRoom(level, W, H);
-    this._drawSlots(level, W, H);
-    this._createCards(level, W, H);
-
-    this._createMuteToggle(W, H);
-    this._createMenuButton(W, H);
-    this._buildMenuOverlay(W, H);
+    this._createMuteToggle();
+    this._createMenuButton();
+    this._buildMenuOverlay();
 
     this.scene.launch("UIScene", {
       getSequence: () => this.cardManager.getSequence(),
@@ -48,160 +44,96 @@ class GameScene extends Phaser.Scene {
     this.cameras.main.fadeIn(600, 0, 0, 0);
   }
 
-  // ── Left panel: room info ────────────────────────────────
-
-  _drawDivider(W, H) {
-    const divX = Math.floor(W * 0.38);
-    const gfx = this.add.graphics();
-    gfx.lineStyle(1, 0x222233, 1);
-    gfx.lineBetween(divX, 0, divX, H);
-  }
-
-  _drawRoom(level, W, H) {
-    const leftW = W * 0.38;
-    const padL = 20;
-    const padT = 16;
-    const cx = leftW / 2;
-    const typo = '"Special Elite", "Courier New", monospace';
-    const serif = '"Playfair Display", Georgia, serif';
+  _drawRoom(level) {
+    const roomBg = this.add.graphics();
+    roomBg.fillStyle(0x111122, 1);
+    roomBg.fillRoundedRect(20, 15, 760, 200, 10);
+    roomBg.lineStyle(1, 0x333355, 1);
+    roomBg.strokeRoundedRect(20, 15, 760, 200, 10);
 
     const levelNum = this.levelIndex + 1;
     const totalLevels = GameScene.getAllLevels().length;
+
+    const typo = '"Special Elite", "Courier New", monospace';
+
+    this.add
+      .text(400, 35, level.room, {
+        fontSize: "22px",
+        fontFamily: '"Playfair Display", Georgia, serif',
+        color: "#c0c0e0",
+        fontStyle: "bold",
+      })
+      .setOrigin(0.5);
+
     const actNames = ["Togetherness", "Separation", "Reconciliation"];
     const actNum = level.act || 1;
     const actLabel = actNames[actNum - 1] || "";
 
     this.add
-      .text(padL, padT + 50, `Act ${actNum}: ${actLabel}`, {
-        fontSize: "11px",
+      .text(400, 62, `Level ${levelNum} / ${totalLevels}  \u2014  Act ${actNum}: ${actLabel}`, {
+        fontSize: "13px",
         fontFamily: typo,
         color: "#555577",
       })
-      .setOrigin(0, 0);
+      .setOrigin(0.5);
 
     this.add
-      .text(cx, H * 0.22, level.room, {
-        fontSize: "20px",
-        fontFamily: serif,
-        fontStyle: "italic",
-        color: "#d8d8e8",
+      .text(400, 120, level.roomDescription, {
+        fontSize: "15px",
+        fontFamily: '"Special Elite", "Courier New", monospace',
+        color: "#9999bb",
         align: "center",
-        wordWrap: { width: leftW - padL * 2 },
+        wordWrap: { width: 680 },
+        lineSpacing: 6,
+      })
+      .setOrigin(0.5);
+  }
+
+  _drawSlots(level) {
+    const slotW = 150;
+    const slotH = 70;
+    const gap = 16;
+    const count = level.cards.length;
+    const totalW = count * slotW + (count - 1) * gap;
+    const startX = (800 - totalW) / 2 + slotW / 2;
+    const slotY = 290;
+
+    this.add
+      .text(400, 240, "Arrange in order:", {
+        fontSize: "14px",
+        fontFamily: '"Special Elite", "Courier New", monospace',
+        color: "#555577",
       })
       .setOrigin(0.5);
 
-    const divY = H * 0.34;
-    const rule = this.add.graphics();
-    rule.lineStyle(1, 0x333344, 0.6);
-    rule.lineBetween(padL, divY, leftW - padL, divY);
-
-    this.add
-      .text(cx, divY + 20, level.roomDescription, {
-        fontSize: "13px",
-        fontFamily: typo,
-        fontStyle: "italic",
-        color: "#9999aa",
-        align: "center",
-        wordWrap: { width: leftW - padL * 2 },
-        lineSpacing: 6,
-      })
-      .setOrigin(0.5, 0);
-
-    this.add
-      .text(cx, H - padT - 6, `Room ${levelNum} of ${totalLevels}`, {
-        fontSize: "11px",
-        fontFamily: typo,
-        color: "#444466",
-      })
-      .setOrigin(0.5, 1);
-  }
-
-  // ── Right panel: slots + cards (2×2 grids) ───────────────
-
-  _calcLayout(W, H) {
-    const leftW = W * 0.38;
-    const rightW = W * 0.62;
-    const pad = 16;
-    const hGap = 16;
-    const vGap = 8;
-    const betweenGap = 12;
-    const submitH = 48;
-    const topPad = 16;
-    const bottomPad = 20;
-
-    const cardW = (rightW - 48) / 2;
-
-    const contentTop = topPad;
-    const contentBottom = H - bottomPad - submitH - betweenGap;
-    const totalContentH = contentBottom - contentTop;
-    const totalVGaps = vGap + betweenGap + vGap;
-    const rowH = Math.min(Math.max(56, (totalContentH - totalVGaps) / 4), 130);
-
-    const col0x = leftW + pad + cardW / 2;
-    const col1x = leftW + pad + cardW + hGap + cardW / 2;
-
-    const slotRow0Y = contentTop + rowH / 2;
-    const slotRow1Y = slotRow0Y + rowH + vGap;
-    const cardRow0Y = slotRow1Y + rowH + betweenGap;
-    const cardRow1Y = cardRow0Y + rowH + vGap;
-
-    const submitCx = leftW + rightW / 2;
-    const submitBy = H - bottomPad - submitH / 2;
-    const submitBtnW = rightW - pad * 2;
-
-    return {
-      leftW, rightW, pad, cardW, rowH,
-      col0x, col1x,
-      slotRow0Y, slotRow1Y,
-      cardRow0Y, cardRow1Y,
-      submitCx, submitBy, submitBtnW, submitH,
-    };
-  }
-
-  _drawSlots(level, W, H) {
-    const L = this._calcLayout(W, H);
-    const typo = '"Special Elite", "Courier New", monospace';
-
-    this._layout = L;
     this.slotGfx = [];
-    this.slots = [];
-
-    const rows = [L.slotRow0Y, L.slotRow1Y];
-    const cols = [L.col0x, L.col1x];
-
-    for (let i = 0; i < 4; i++) {
-      const col = i % 2;
-      const row = Math.floor(i / 2);
-      const sx = cols[col];
-      const sy = rows[row];
-
+    this.slots = level.cards.map((_, i) => {
+      const sx = startX + i * (slotW + gap);
       const gfx = this.add.graphics();
       gfx.lineStyle(2, 0x444466, 0.7);
-      gfx.strokeRoundedRect(sx - L.cardW / 2, sy - L.rowH / 2, L.cardW, L.rowH, 10);
+      gfx.strokeRoundedRect(sx - slotW / 2, slotY - slotH / 2, slotW, slotH, 10);
 
       this.add
-        .text(sx - L.cardW / 2 + 8, sy - L.rowH / 2 + 4, `${i + 1}`, {
-          fontSize: "14px",
-          fontFamily: typo,
+        .text(sx, slotY, `${i + 1}`, {
+          fontSize: "22px",
+          fontFamily: '"Special Elite", "Courier New", monospace',
           color: "#2a2a44",
-        });
+        })
+        .setOrigin(0.5);
 
       this.slotGfx.push(gfx);
-      this.slots.push({ x: sx, y: sy, w: L.cardW, h: L.rowH });
-    }
+      return { x: sx, y: slotY, w: slotW, h: slotH };
+    });
   }
 
-  _createCards(level, W, H) {
-    const L = this._layout;
-    const rows = [L.cardRow0Y, L.cardRow1Y];
-    const cols = [L.col0x, L.col1x];
-
-    const positions = [
-      { x: cols[0], y: rows[0] },
-      { x: cols[1], y: rows[0] },
-      { x: cols[0], y: rows[1] },
-      { x: cols[1], y: rows[1] },
-    ];
+  _createCards(level) {
+    const cardW = 150;
+    const cardH = 70;
+    const gap = 16;
+    const count = level.cards.length;
+    const totalW = count * cardW + (count - 1) * gap;
+    const startX = (800 - totalW) / 2 + cardW / 2;
+    const cardY = 430;
 
     let shuffled = [...level.cards];
     const matchesCorrect = (arr) =>
@@ -214,7 +146,7 @@ class GameScene extends Phaser.Scene {
     } while (matchesCorrect(shuffled) && attempts < 20);
 
     this.cardManager = new CardManager(this, shuffled, this.slots);
-    this.cardManager.createCards(positions, L.cardW, L.rowH);
+    this.cardManager.createCards(startX, cardY, cardW, cardH, gap);
   }
 
   _advanceLevel(levels) {
@@ -228,11 +160,8 @@ class GameScene extends Phaser.Scene {
     if (isActBreak && next < levels.length) {
       this._showActBreak(next, levels);
     } else {
-      const cx = this.scale.width / 2;
-      const cy = this.scale.height / 2;
-
       const loadingDot = this.add
-        .text(cx, cy, "\u2022", {
+        .text(400, 300, "\u2022", {
           fontSize: "24px",
           color: "#666688",
         })
@@ -262,12 +191,12 @@ class GameScene extends Phaser.Scene {
   }
 
   _showActBreak(next, levels) {
-    const typo = '"Special Elite", "Courier New", monospace';
     const actLines = {
       10: "Something changed in the house.",
       20: "The rooms remember what the people forgot.",
     };
     const line = actLines[next] || "A new chapter begins.";
+    const typo = '"Special Elite", "Courier New", monospace';
 
     this.cameras.main.fadeOut(1500, 0, 0, 0);
     this.cameras.main.once("camerafadeoutcomplete", () => {
@@ -277,6 +206,7 @@ class GameScene extends Phaser.Scene {
 
       const cx = this.scale.width / 2;
       const cy = this.scale.height / 2;
+
       const actNum = next < 20 ? 2 : 3;
       const actNames = ["Togetherness", "Separation", "Reconciliation"];
       const roomsCompleted = next === 10 ? "10" : "20";
@@ -296,7 +226,7 @@ class GameScene extends Phaser.Scene {
       const text = this.add
         .text(cx, cy + 10, line, {
           fontSize: "18px", fontFamily: typo, color: "#c0c0d0",
-          align: "center", wordWrap: { width: Math.min(600, this.scale.width * 0.7) },
+          align: "center", wordWrap: { width: 600 },
         })
         .setOrigin(0.5).setAlpha(0);
 
@@ -317,7 +247,9 @@ class GameScene extends Phaser.Scene {
   _commitLevelStats() {
     const s = this.levelStats;
     const agg = GameScene.loadStats();
-    if (s.wrong === 0 && !s.skipped) agg.firstAttempts++;
+    if (s.wrong === 0 && !s.skipped) {
+      agg.firstAttempts++;
+    }
     agg.totalWrong += s.wrong;
     agg.focusTotal += s.focus;
     agg.clueTotal += s.clue;
@@ -327,59 +259,70 @@ class GameScene extends Phaser.Scene {
 
   // ── Mute toggle ────────────────────────────────────────
 
-  _createMuteToggle(W, H) {
-    const leftW = W * 0.38;
-    const x = leftW - 20;
-    const y = 20;
-    const typo = '"Special Elite", "Courier New", monospace';
-
+  _createMuteToggle() {
+    const x = 770;
+    const y = 24;
     this.muteIcon = this.add
       .text(x, y, "\u266a", {
         fontSize: "18px",
-        fontFamily: typo,
+        fontFamily: '"Special Elite", "Courier New", monospace',
         color: soundManager.isMuted() ? "#333344" : "#8888aa",
       })
       .setOrigin(0.5)
       .setInteractive({ useHandCursor: true });
 
     this.muteStrike = this.add.graphics();
-    this._drawMuteState(x, y);
+    this._drawMuteState();
 
+    this.muteTooltip = this.add
+      .text(x, y + 20, "Sound", {
+        fontSize: "10px",
+        fontFamily: '"Special Elite", "Courier New", monospace',
+        color: "#555566",
+      })
+      .setOrigin(0.5)
+      .setAlpha(0);
+
+    this.muteIcon.on("pointerover", () => {
+      this.tweens.add({ targets: this.muteTooltip, alpha: 1, duration: 150 });
+    });
+    this.muteIcon.on("pointerout", () => {
+      this.tweens.add({ targets: this.muteTooltip, alpha: 0, duration: 150 });
+    });
     this.muteIcon.on("pointerdown", () => {
       soundManager.toggleMute();
-      this._drawMuteState(x, y);
+      this._drawMuteState();
     });
   }
 
-  _drawMuteState(x, y) {
+  _drawMuteState() {
     this.muteStrike.clear();
     if (soundManager.isMuted()) {
       this.muteIcon.setColor("#333344");
       this.muteStrike.lineStyle(2, 0x884444, 0.7);
-      this.muteStrike.lineBetween(x - 9, y - 9, x + 9, y + 9);
+      this.muteStrike.lineBetween(761, 15, 779, 33);
     } else {
       this.muteIcon.setColor("#8888aa");
     }
   }
 
-  // ── Menu button & overlay ──────────────────────────────
+  // ── Menu button & confirmation overlay ────────────────
 
-  _createMenuButton(W, H) {
-    const typo = '"Special Elite", "Courier New", monospace';
-    const btnX = 14;
-    const btnY = 16;
+  _createMenuButton() {
+    const btnX = 40;
+    const btnY = 24;
 
     this._menuBtn = this.add
       .text(btnX, btnY, "\u2261 Menu", {
         fontSize: "13px",
-        fontFamily: typo,
+        fontFamily: '"Special Elite", "Courier New", monospace',
         color: "#555566",
       })
-      .setOrigin(0, 0)
+      .setOrigin(0, 0.5)
       .setDepth(100)
       .setInteractive({
         useHandCursor: true,
-        hitArea: new Phaser.Geom.Rectangle(-6, -6, 80, 52),
+        hitArea: new Phaser.Geom.Rectangle(-10, -14, 80, 44),
         hitAreaCallback: Phaser.Geom.Rectangle.Contains,
       });
 
@@ -391,49 +334,54 @@ class GameScene extends Phaser.Scene {
     });
   }
 
-  _buildMenuOverlay(W, H) {
-    const cx = W / 2;
-    const cy = H / 2;
-    const typoOv = '"Special Elite", "Courier New", monospace';
-
+  _buildMenuOverlay() {
     this._menuOverlayGroup = this.add.container(0, 0).setDepth(200).setVisible(false);
 
-    const backdrop = this.add.rectangle(cx, cy, W, H, 0x000000, 0.7);
+    const backdrop = this.add.rectangle(400, 300, 800, 600, 0x000000, 0.7);
     backdrop.setInteractive();
 
-    const pw = Math.min(340, W * 0.5);
-    const ph = Math.min(210, H * 0.7);
     const panel = this.add.graphics();
+    const pw = 340;
+    const ph = 210;
+    const px = 400 - pw / 2;
+    const py = 300 - ph / 2;
     panel.fillStyle(0x1a1a2e, 1);
-    panel.fillRoundedRect(cx - pw / 2, cy - ph / 2, pw, ph, 14);
+    panel.fillRoundedRect(px, py, pw, ph, 14);
     panel.lineStyle(1, 0x444466, 1);
-    panel.strokeRoundedRect(cx - pw / 2, cy - ph / 2, pw, ph, 14);
+    panel.strokeRoundedRect(px, py, pw, ph, 14);
+
+    const typoOv = '"Special Elite", "Courier New", monospace';
 
     const title = this.add
-      .text(cx, cy - ph / 4, "[ Paused ]", {
-        fontSize: "20px", fontFamily: typoOv, color: "#c0c0e0",
+      .text(400, 245, "[ Paused ]", {
+        fontSize: "20px",
+        fontFamily: typoOv,
+        color: "#c0c0e0",
       })
       .setOrigin(0.5);
 
-    const resumeBtn = this._makeOverlayButton(cx, cy + 10, "Resume", () => {
+    const resumeBtn = this._makeOverlayButton(400, 310, "Resume", () => {
       soundManager.playClick();
       this._closeMenuOverlay();
     });
 
-    const menuBtn = this._makeOverlayButton(cx, cy + 55, "Return to Menu", () => {
+    const menuBtn = this._makeOverlayButton(400, 355, "Return to Menu", () => {
       soundManager.playClick();
       this.scene.stop("UIScene");
       this.scene.start("MenuScene");
     });
 
-    this._menuOverlayGroup.add([backdrop, panel, title, ...resumeBtn, ...menuBtn]);
+    this._menuOverlayGroup.add([
+      backdrop, panel, title,
+      ...resumeBtn, ...menuBtn,
+    ]);
   }
 
   _makeOverlayButton(cx, cy, label, callback) {
-    const btnW = 104;
-    const btnH = 35;
     const hitW = 130;
     const hitH = 44;
+    const btnW = 104;
+    const btnH = 35;
 
     const bg = this.add.graphics();
     bg.fillStyle(0x2a2a44, 1);
@@ -470,7 +418,9 @@ class GameScene extends Phaser.Scene {
       ease: "Cubic.easeOut",
     });
     this.scene.pause("UIScene");
-    this._escListener = () => this._closeMenuOverlay();
+    this._escListener = (e) => {
+      if (e.key === "Escape") this._closeMenuOverlay();
+    };
     this.input.keyboard.on("keydown-ESC", this._escListener);
   }
 
@@ -488,7 +438,9 @@ class GameScene extends Phaser.Scene {
   static getChapterForLevel(levelIndex) {
     let count = 0;
     for (const chapter of LevelData.chapters) {
-      if (levelIndex < count + chapter.levels.length) return chapter.id;
+      if (levelIndex < count + chapter.levels.length) {
+        return chapter.id;
+      }
       count += chapter.levels.length;
     }
     const last = LevelData.chapters[LevelData.chapters.length - 1];
@@ -497,7 +449,9 @@ class GameScene extends Phaser.Scene {
 
   static getAllLevels() {
     const all = [];
-    for (const chapter of LevelData.chapters) all.push(...chapter.levels);
+    for (const chapter of LevelData.chapters) {
+      all.push(...chapter.levels);
+    }
     return all;
   }
 
@@ -520,22 +474,29 @@ class GameScene extends Phaser.Scene {
       const raw = localStorage.getItem(LS.level());
       if (raw === null || raw === undefined) return;
       const val = parseInt(raw, 10);
-      if (isNaN(val) || val < 0 || val > total) localStorage.setItem(LS.level(), "0");
+      if (isNaN(val) || val < 0 || val > total) {
+        localStorage.setItem(LS.level(), "0");
+      }
     } catch (_) {}
+
     const statKeys = [LS.firstAttempts, LS.wrongTotal, LS.hintsFocus, LS.hintsClue, LS.hintsReveal];
     for (const fn of statKeys) {
       try {
         const raw = localStorage.getItem(fn());
         if (raw === null) continue;
         const val = parseInt(raw, 10);
-        if (isNaN(val) || val < 0) localStorage.setItem(fn(), "0");
+        if (isNaN(val) || val < 0) {
+          localStorage.setItem(fn(), "0");
+        }
       } catch (_) {
         try { localStorage.removeItem(fn()); } catch (_e) {}
       }
     }
   }
 
-  static saveProgress(index) { GameScene._safeSetInt(LS.level(), index); }
+  static saveProgress(index) {
+    GameScene._safeSetInt(LS.level(), index);
+  }
 
   static loadProgress() {
     GameScene.validateStorage();
@@ -547,7 +508,9 @@ class GameScene extends Phaser.Scene {
       const total = GameScene.getAllLevels().length;
       if (num > total) return 0;
       return num;
-    } catch (_) { return 0; }
+    } catch (_) {
+      return 0;
+    }
   }
 
   static loadStats() {
@@ -577,18 +540,22 @@ class GameScene extends Phaser.Scene {
       localStorage.setItem(LS.certDate(), new Date().toISOString().slice(0, 10));
       const prev = GameScene._safeGetInt(LS.bestFirst());
       const current = stats.firstAttempts || 0;
-      if (current > prev) GameScene._safeSetInt(LS.bestFirst(), current);
+      if (current > prev) {
+        GameScene._safeSetInt(LS.bestFirst(), current);
+      }
     } catch (_) {}
   }
 
   static isChapterComplete() {
-    try { return localStorage.getItem(LS.completed()) === "true"; }
-    catch (_) { return false; }
+    try {
+      return localStorage.getItem(LS.completed()) === "true";
+    } catch (_) { return false; }
   }
 
   static loadRating() {
-    try { return localStorage.getItem(LS.rating()) || ""; }
-    catch (_) { return ""; }
+    try {
+      return localStorage.getItem(LS.rating()) || "";
+    } catch (_) { return ""; }
   }
 
   static resetAll() {

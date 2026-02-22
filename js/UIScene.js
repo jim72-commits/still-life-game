@@ -27,32 +27,22 @@ class UIScene extends Phaser.Scene {
     this._pollSlots();
   }
 
-  // ── Submit (bottom of right panel, full width) ────────────
+  // ── Submit ──────────────────────────────────────────────
 
   _createSubmitButton() {
-    const W = this.scale.width;
-    const H = this.scale.height;
-    const leftW = W * 0.38;
-    const rightW = W * 0.62;
-    const pad = 16;
-    const btnW = rightW - pad * 2;
+    const cx = 400;
+    const by = 530;
+    const btnW = 150;
     const btnH = 48;
-    const cx = leftW + rightW / 2;
-    const by = H - 20 - btnH / 2;
-
-    this._submitCx = cx;
-    this._submitBy = by;
-    this._submitBtnW = btnW;
-    this._submitBtnH = btnH;
 
     this.submitBg = this.add.graphics();
-    this._drawSubmitBtn(0x1e3e28, 0x336644);
+    this._drawSubmitBtn(0x2a6a3a, 0x44cc66);
 
     this.submitLabel = this.add
       .text(cx, by, "Submit", {
         fontSize: "17px",
         fontFamily: '"Special Elite", "Courier New", monospace',
-        color: "#667766",
+        color: "#ccffcc",
       })
       .setOrigin(0.5);
 
@@ -68,23 +58,32 @@ class UIScene extends Phaser.Scene {
     });
     zone.on("pointerdown", () => {
       soundManager.playClick();
-      if (!this.submitted && this._submitReady) this.submitLabel.setScale(0.95);
+      if (!this.submitted && this._submitReady) {
+        this.submitLabel.setScale(0.95);
+      }
       this._onSubmit();
     });
     zone.on("pointerup", () => {
       if (!this.submitted) {
-        this.tweens.add({ targets: this.submitLabel, scale: 1, duration: 100 });
+        this.tweens.add({
+          targets: this.submitLabel,
+          scale: 1,
+          duration: 100,
+        });
       }
     });
   }
 
   _drawSubmitBtn(fill, stroke) {
-    const { _submitCx: cx, _submitBy: by, _submitBtnW: w, _submitBtnH: h } = this;
+    const cx = 400;
+    const by = 530;
+    const btnW = 150;
+    const btnH = 48;
     this.submitBg.clear();
     this.submitBg.fillStyle(fill, 1);
-    this.submitBg.fillRoundedRect(cx - w / 2, by - h / 2, w, h, 12);
+    this.submitBg.fillRoundedRect(cx - btnW / 2, by - btnH / 2, btnW, btnH, 12);
     this.submitBg.lineStyle(2, stroke, 1);
-    this.submitBg.strokeRoundedRect(cx - w / 2, by - h / 2, w, h, 12);
+    this.submitBg.strokeRoundedRect(cx - btnW / 2, by - btnH / 2, btnW, btnH, 12);
   }
 
   _pollSlots() {
@@ -106,19 +105,16 @@ class UIScene extends Phaser.Scene {
         }
       },
     });
+    this.submitLabel.setColor("#667766");
+    this._drawSubmitBtn(0x1e3e28, 0x336644);
   }
 
-  // ── Hint "?" (top right of right panel) ─────────────────
+  // ── Hint "?" trigger ───────────────────────────────────
 
   _createHintButton() {
-    const W = this.scale.width;
-    const pad = 16;
-    const x = W - pad - 26;
-    const y = pad + 26;
-    const r = 26;
-
-    this._hintX = x;
-    this._hintY = y;
+    const x = 40;
+    const y = 530;
+    const r = 22;
 
     this.hintBtnBg = this.add.graphics();
     this._drawHintTrigger(0x333355, 0x6666aa);
@@ -141,8 +137,9 @@ class UIScene extends Phaser.Scene {
   }
 
   _drawHintTrigger(fill, stroke) {
-    const { _hintX: x, _hintY: y } = this;
-    const r = 26;
+    const x = 40;
+    const y = 530;
+    const r = 22;
     this.hintBtnBg.clear();
     this.hintBtnBg.fillStyle(fill, 1);
     this.hintBtnBg.fillCircle(x, y, r);
@@ -150,35 +147,32 @@ class UIScene extends Phaser.Scene {
     this.hintBtnBg.strokeCircle(x, y, r);
   }
 
-  // ── Hint overlay (centered on screen) ────────────────────
+  // ── Hint overlay ───────────────────────────────────────
 
   _buildHintOverlay() {
-    const W = this.scale.width;
-    const H = this.scale.height;
-    const cx = W / 2;
-    const cy = H / 2;
-
     this.hintOverlay = this.add.container(0, 0).setDepth(50).setVisible(false);
     this.hintInteractives = [];
 
-    const backdrop = this.add.rectangle(cx, cy, W, H, 0x000000, 0.6);
+    const backdrop = this.add.rectangle(400, 300, 800, 600, 0x000000, 0.6);
     backdrop.setInteractive();
     backdrop.on("pointerdown", () => this._closeHintOverlay());
     backdrop.input.enabled = false;
     this.hintOverlay.add(backdrop);
     this.hintInteractives.push(backdrop);
 
-    const pw = Math.min(300, W * 0.45);
-    const ph = Math.min(310, H * 0.85);
+    const px = 400;
+    const py = 300;
+    const pw = 300;
+    const ph = 310;
     const panel = this.add.graphics();
     panel.fillStyle(0x1a1a2e, 0.97);
-    panel.fillRoundedRect(cx - pw / 2, cy - ph / 2, pw, ph, 14);
+    panel.fillRoundedRect(px - pw / 2, py - ph / 2, pw, ph, 14);
     panel.lineStyle(1, 0x444466, 1);
-    panel.strokeRoundedRect(cx - pw / 2, cy - ph / 2, pw, ph, 14);
+    panel.strokeRoundedRect(px - pw / 2, py - ph / 2, pw, ph, 14);
     this.hintOverlay.add(panel);
 
     const title = this.add
-      .text(cx, cy - ph / 2 + 28, "[ Hints ]", {
+      .text(px, py - ph / 2 + 28, "[ Hints ]", {
         fontSize: "18px",
         fontFamily: '"Special Elite", "Courier New", monospace',
         color: "#c0c0e0",
@@ -186,9 +180,29 @@ class UIScene extends Phaser.Scene {
       .setOrigin(0.5);
     this.hintOverlay.add(title);
 
-    this.focusBtn = this._addHintOption(cx, cy - 55, "Focus", "Highlight a wrong card", () => this._useFocus(), () => true);
-    this.clueBtn = this._addHintOption(cx, cy + 15, "Clue", "Lock first card \u00b7 1/level", () => this._useClue(), () => !this.clueUsed);
-    this.revealBtn = this._addHintOption(cx, cy + 85, "Reveal", "Show answer (3s) \u00b7 1/chapter", () => this._useReveal(), () => !this._isRevealSpent());
+    this.focusBtn = this._addHintOption(
+      px, py - 55,
+      "Focus",
+      "Highlight a wrong card",
+      () => this._useFocus(),
+      () => true
+    );
+
+    this.clueBtn = this._addHintOption(
+      px, py + 15,
+      "Clue",
+      "Lock first card \u00b7 1/level",
+      () => this._useClue(),
+      () => !this.clueUsed
+    );
+
+    this.revealBtn = this._addHintOption(
+      px, py + 85,
+      "Reveal",
+      "Show answer (3s) \u00b7 1/chapter",
+      () => this._useReveal(),
+      () => !this._isRevealSpent()
+    );
   }
 
   _addHintOption(x, y, label, desc, onClick, isAvail) {
@@ -208,6 +222,7 @@ class UIScene extends Phaser.Scene {
         bg.strokeRoundedRect(x - bw / 2, y - bh / 2, bw, bh, 10);
       }
     };
+
     draw(isAvail(), false);
 
     const lbl = this.add
@@ -226,8 +241,13 @@ class UIScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
 
-    const zone = this.add.zone(x, y, bw, bh).setInteractive({ useHandCursor: true });
-    zone.on("pointerover", () => { if (isAvail()) draw(true, true); });
+    const zone = this.add
+      .zone(x, y, bw, bh)
+      .setInteractive({ useHandCursor: true });
+
+    zone.on("pointerover", () => {
+      if (isAvail()) draw(true, true);
+    });
     zone.on("pointerout", () => draw(isAvail(), false));
     zone.on("pointerdown", () => {
       if (!isAvail()) return;
@@ -235,6 +255,7 @@ class UIScene extends Phaser.Scene {
       onClick();
       this._closeHintOverlay();
     });
+
     zone.input.enabled = false;
     this.hintOverlay.add([bg, lbl, dsc, zone]);
     this.hintInteractives.push(zone);
@@ -250,8 +271,11 @@ class UIScene extends Phaser.Scene {
   }
 
   _toggleHintOverlay() {
-    if (this.hintOpen) this._closeHintOverlay();
-    else this._openHintOverlay();
+    if (this.hintOpen) {
+      this._closeHintOverlay();
+    } else {
+      this._openHintOverlay();
+    }
   }
 
   _openHintOverlay() {
@@ -261,7 +285,12 @@ class UIScene extends Phaser.Scene {
     this.clueBtn.refresh();
     this.revealBtn.refresh();
     this.hintOverlay.setVisible(true).setAlpha(0);
-    this.tweens.add({ targets: this.hintOverlay, alpha: 1, duration: 200, ease: "Cubic.easeOut" });
+    this.tweens.add({
+      targets: this.hintOverlay,
+      alpha: 1,
+      duration: 200,
+      ease: "Cubic.easeOut",
+    });
     this.hintInteractives.forEach((o) => (o.input.enabled = true));
     this._hintEsc = () => this._closeHintOverlay();
     this.input.keyboard.on("keydown-ESC", this._hintEsc);
@@ -284,9 +313,12 @@ class UIScene extends Phaser.Scene {
     const seq = this.cardManager.getSequence();
     const wrong = [];
     for (let i = 0; i < seq.length; i++) {
-      if (seq[i] !== null && seq[i] !== this.correctSequence[i]) wrong.push(i);
+      if (seq[i] !== null && seq[i] !== this.correctSequence[i]) {
+        wrong.push(i);
+      }
     }
     if (wrong.length === 0) return;
+
     this.levelStats.focus++;
     Analytics.hintUsed(this.levelIndex + 1, "focus");
     const pick = Phaser.Utils.Array.GetRandom(wrong);
@@ -308,22 +340,19 @@ class UIScene extends Phaser.Scene {
     this.levelStats.reveal++;
     Analytics.hintUsed(this.levelIndex + 1, "reveal");
 
-    const W = this.scale.width;
-    const H = this.scale.height;
-    const cx = W / 2;
-    const cy = H / 2;
-
     const lines = this.correctSequence.map((id, i) => {
       const card = this.cards.find((c) => c.id === id);
       return `${i + 1}.  ${card ? card.text : id}`;
     });
 
     const overlay = this.add.container(0, 0).setDepth(80).setAlpha(0);
-    overlay.add(this.add.rectangle(cx, cy, W, H, 0x000000, 0.8));
+
+    const bg = this.add.rectangle(400, 300, 800, 600, 0x000000, 0.8);
+    overlay.add(bg);
 
     overlay.add(
       this.add
-        .text(cx, cy - 50, "[ Correct Sequence ]", {
+        .text(400, 230, "[ Correct Sequence ]", {
           fontSize: "17px",
           fontFamily: '"Special Elite", "Courier New", monospace',
           color: "#aaaacc",
@@ -333,7 +362,7 @@ class UIScene extends Phaser.Scene {
 
     overlay.add(
       this.add
-        .text(cx, cy + 30, lines.join("\n"), {
+        .text(400, 320, lines.join("\n"), {
           fontSize: "14px",
           fontFamily: '"Special Elite", "Courier New", monospace',
           color: "#e0e0ff",
@@ -343,10 +372,19 @@ class UIScene extends Phaser.Scene {
         .setOrigin(0.5)
     );
 
-    this.tweens.add({ targets: overlay, alpha: 1, duration: 300, ease: "Cubic.easeOut" });
+    this.tweens.add({
+      targets: overlay,
+      alpha: 1,
+      duration: 300,
+      ease: "Cubic.easeOut",
+    });
+
     this.time.delayedCall(3000, () => {
       this.tweens.add({
-        targets: overlay, alpha: 0, duration: 500, ease: "Cubic.easeIn",
+        targets: overlay,
+        alpha: 0,
+        duration: 500,
+        ease: "Cubic.easeIn",
         onComplete: () => overlay.destroy(),
       });
     });
@@ -363,14 +401,13 @@ class UIScene extends Phaser.Scene {
   // ── Flash overlay ──────────────────────────────────────
 
   _createFlashOverlay() {
-    const W = this.scale.width;
-    const H = this.scale.height;
-    this.flash = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0);
+    this.flash = this.add.rectangle(400, 300, 800, 600, 0x000000, 0);
     this.flash.setDepth(100);
   }
 
   _onSubmit() {
     if (this.submitted) return;
+
     const seq = this.getSequence();
     if (seq.includes(null)) return;
 
@@ -394,13 +431,8 @@ class UIScene extends Phaser.Scene {
   }
 
   _showCelebration() {
-    const W = this.scale.width;
-    const H = this.scale.height;
-    const leftW = W * 0.38;
-    const cx = leftW + (W * 0.62) / 2;
-
     const label = this.add
-      .text(cx, H * 0.48, "\u2713  Room catalogued.", {
+      .text(400, 370, "\u2713  Room catalogued.", {
         fontSize: "18px",
         fontFamily: '"Special Elite", "Courier New", monospace',
         color: "#aaffcc",
@@ -408,10 +440,20 @@ class UIScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setAlpha(0);
 
-    this.tweens.add({ targets: label, alpha: 1, y: label.y - 10, duration: 600, ease: "Cubic.easeOut" });
+    this.tweens.add({
+      targets: label,
+      alpha: 1,
+      y: 360,
+      duration: 600,
+      ease: "Cubic.easeOut",
+    });
+
     this.time.delayedCall(900, () => {
       this.tweens.add({
-        targets: label, alpha: 0, duration: 400, ease: "Cubic.easeIn",
+        targets: label,
+        alpha: 0,
+        duration: 400,
+        ease: "Cubic.easeIn",
         onComplete: () => label.destroy(),
       });
     });

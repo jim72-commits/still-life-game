@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="apple-mobile-web-app-capable" content="yes">
   <title>Still Life</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -10,19 +10,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Special+Elite&display=swap" rel="stylesheet" />
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body {
-      width: 100%; height: 100%;
-      background: #0a0a0a;
-      overflow: hidden;
-      touch-action: manipulation;
-    }
-    canvas { touch-action: none; display: block; }
-
-    #game-container {
-      width: 100%; height: 100%;
-      position: fixed; inset: 0;
-      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
-    }
+    html, body { width: 100%; height: 100%; background: #1a1a1a; overflow: hidden; touch-action: manipulation; }
+    canvas { touch-action: none; }
 
     #loading-screen {
       position: fixed; inset: 0;
@@ -60,7 +49,7 @@
       50% { opacity: 0; }
     }
 
-    /* ── Rotate overlay (portrait on mobile) ── */
+    /* ── Rotate overlay (landscape on mobile) ── */
     #rotate-overlay {
       position: fixed; inset: 0;
       display: none;
@@ -72,25 +61,25 @@
       font-family: 'Special Elite', 'Courier New', monospace;
     }
     .rotate-phone {
-      width: 36px; height: 62px;
+      width: 62px; height: 36px;
       border: 3px solid #555577;
       border-radius: 8px;
       margin-bottom: 28px;
       position: relative;
-      animation: rotate-to-landscape 2.5s ease-in-out infinite;
+      animation: rotate-to-portrait 2.5s ease-in-out infinite;
     }
     .rotate-phone::after {
       content: '';
       position: absolute;
-      bottom: 5px; left: 50%;
-      transform: translateX(-50%);
-      width: 8px; height: 3px;
+      right: 5px; top: 50%;
+      transform: translateY(-50%);
+      width: 3px; height: 8px;
       border-radius: 2px;
       background: #555577;
     }
-    @keyframes rotate-to-landscape {
+    @keyframes rotate-to-portrait {
       0%, 25%  { transform: rotate(0deg); }
-      45%, 75% { transform: rotate(-90deg); }
+      45%, 75% { transform: rotate(90deg); }
       100%     { transform: rotate(0deg); }
     }
     .rotate-text {
@@ -103,13 +92,8 @@
       color: #666688;
     }
 
-    @media screen and (orientation: portrait) and (max-width: 768px) {
+    @media screen and (orientation: landscape) and (max-height: 500px) {
       #rotate-overlay { display: flex; }
-      #game-container { display: none; }
-    }
-    @media screen and (orientation: landscape), screen and (min-width: 769px) {
-      #rotate-overlay { display: none !important; }
-      #game-container { display: block; }
     }
   </style>
 </head>
@@ -122,10 +106,8 @@
   <div id="rotate-overlay">
     <div class="rotate-phone"></div>
     <div class="rotate-text">Please rotate your device</div>
-    <div class="rotate-subtext">Still Life is best played in landscape</div>
+    <div class="rotate-subtext">Still Life is best played in portrait</div>
   </div>
-
-  <div id="game-container"></div>
 
   <!-- Replace GA_MEASUREMENT_ID with your actual Google Analytics 4 Measurement ID from analytics.google.com -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=GA_MEASUREMENT_ID"></script>
@@ -162,14 +144,16 @@
       ? [CompletionScene, MenuScene, PrologueScene, GameScene, UIScene, SummaryScene, EndingScene]
       : [MenuScene, PrologueScene, GameScene, UIScene, SummaryScene, EndingScene, CompletionScene];
 
-    var config = {
+    const config = {
       type: Phaser.AUTO,
+      width: 800,
+      height: 600,
       backgroundColor: "#1a1a1a",
-      parent: "game-container",
+      parent: document.body,
       input: { touch: true },
       scale: {
-        mode: Phaser.Scale.RESIZE,
-        autoCenter: Phaser.Scale.NO_CENTER,
+        mode: Phaser.Scale.FIT,
+        autoCenter: Phaser.Scale.CENTER_BOTH,
       },
       scene: sceneList,
     };
@@ -182,23 +166,6 @@
       if (ls) { ls.style.display = "none"; }
       history.replaceState(null, "", window.location.pathname);
     }
-
-    // Pause Phaser when portrait overlay shows, resume on landscape
-    var _portraitQuery = window.matchMedia("(orientation: portrait) and (max-width: 768px)");
-    function _handleOrientation(e) {
-      if (!game) return;
-      if (e.matches) {
-        game.scene.getScenes(true).forEach(function(s) { s.scene.pause(); });
-      } else {
-        game.scene.getScenes(false).forEach(function(s) {
-          if (s.scene.isPaused()) s.scene.resume();
-        });
-        setTimeout(function() {
-          if (game && game.scale) game.scale.refresh();
-        }, 150);
-      }
-    }
-    _portraitQuery.addEventListener("change", _handleOrientation);
   </script>
 </body>
 </html>

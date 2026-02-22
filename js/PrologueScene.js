@@ -7,16 +7,14 @@ class PrologueScene extends Phaser.Scene {
     this._done = false;
     this.cameras.main.setBackgroundColor(0x000000);
 
-    const W = this.scale.width;
-    const H = this.scale.height;
-    const cx = W / 2;
-    const cy = H / 2;
+    const cx = 400;
+    const cy = 300;
     const typo = '"Special Elite", "Courier New", monospace';
 
     const lines = [
-      { text: "This is a house.", y: cy - 36 },
+      { text: "This is a house.", y: cy - 40 },
       { text: "These are the things left behind.", y: cy },
-      { text: "You are here to understand what happened.", y: cy + 36 },
+      { text: "You are here to understand what happened.", y: cy + 40 },
     ];
 
     const textObjects = lines.map((ln) =>
@@ -48,11 +46,13 @@ class PrologueScene extends Phaser.Scene {
     const allTextDone = lines.length * step;
     this.time.delayedCall(allTextDone, () => {
       this.cameras.main.fadeOut(1000, 0, 0, 0);
-      this.cameras.main.once("camerafadeoutcomplete", () => this._goToLevel1());
+      this.cameras.main.once("camerafadeoutcomplete", () => {
+        this._goToLevel1();
+      });
     });
 
     const skipLabel = this.add
-      .text(W - 40, H - 24, "[ Skip ]", {
+      .text(760, 575, "[ Skip ]", {
         fontSize: "12px",
         fontFamily: typo,
         color: "#555577",
@@ -65,7 +65,12 @@ class PrologueScene extends Phaser.Scene {
     skipLabel.on("pointerdown", () => {
       soundManager.playClick();
       skipLabel.setScale(0.9);
-      this.tweens.add({ targets: skipLabel, scale: 1, duration: 100, ease: "Cubic.easeOut" });
+      this.tweens.add({
+        targets: skipLabel,
+        scale: 1,
+        duration: 100,
+        ease: "Cubic.easeOut",
+      });
       this._goToLevel1();
     });
 
@@ -82,12 +87,16 @@ class PrologueScene extends Phaser.Scene {
   }
 
   static hasBeenSeen() {
-    try { return localStorage.getItem(LS.prologue) === "true"; }
-    catch (_) { return false; }
+    try {
+      return localStorage.getItem(LS.prologue) === "true";
+    } catch (_) {
+      return false;
+    }
   }
 
   static markSeen() {
-    try { localStorage.setItem(LS.prologue, "true"); }
-    catch (_) {}
+    try {
+      localStorage.setItem(LS.prologue, "true");
+    } catch (_) { /* storage unavailable */ }
   }
 }

@@ -10,13 +10,15 @@ class CardManager {
     this._ghostSlot = -1;
   }
 
-  createCards(positions, cardW, cardH) {
+  createCards(startX, startY, cardW, cardH, gap) {
     this.cardW = cardW;
     this.cardH = cardH;
 
     this.cardData.forEach((data, i) => {
-      const pos = positions[i];
-      const container = this.scene.add.container(pos.x, pos.y);
+      const x = startX + i * (cardW + gap);
+      const y = startY;
+
+      const container = this.scene.add.container(x, y);
 
       const bg = this.scene.add.graphics();
       bg.fillStyle(0x2a2a4a, 1);
@@ -65,7 +67,7 @@ class CardManager {
         }
       });
 
-      this.originalPositions.push({ x: pos.x, y: pos.y });
+      this.originalPositions.push({ x, y });
       this.cardObjects.push(container);
     });
 
@@ -84,8 +86,11 @@ class CardManager {
         duration: 120,
         ease: "Back.easeOut",
       });
+
       const prevSlot = obj.getData("slotIndex");
-      if (prevSlot >= 0) this._showGhostOutline(prevSlot);
+      if (prevSlot >= 0) {
+        this._showGhostOutline(prevSlot);
+      }
     });
 
     this.scene.input.on("drag", (_pointer, obj, dragX, dragY) => {
@@ -108,8 +113,11 @@ class CardManager {
         ease: "Cubic.easeOut",
       });
       const placedSlot = this._findNearestSlot(obj.x, obj.y);
+
       const prevSlot = obj.getData("slotIndex");
-      if (prevSlot >= 0) this.slotContents[prevSlot] = null;
+      if (prevSlot >= 0) {
+        this.slotContents[prevSlot] = null;
+      }
 
       if (placedSlot !== null && this.slotContents[placedSlot] === null) {
         soundManager.playCardPlace();
@@ -207,8 +215,11 @@ class CardManager {
   resetCards() {
     this.cardObjects.forEach((obj, i) => {
       if (obj.getData("locked")) return;
+
       const slot = obj.getData("slotIndex");
-      if (slot >= 0) this.slotContents[slot] = null;
+      if (slot >= 0) {
+        this.slotContents[slot] = null;
+      }
       obj.setData("slotIndex", -1);
       this.scene.tweens.add({
         targets: obj,
@@ -245,11 +256,15 @@ class CardManager {
   }
 
   lockCardInSlot(cardId, slotIndex) {
-    const cardObj = this.cardObjects.find((c) => c.getData("cardId") === cardId);
+    const cardObj = this.cardObjects.find(
+      (c) => c.getData("cardId") === cardId
+    );
     if (!cardObj) return;
 
     const prevSlot = cardObj.getData("slotIndex");
-    if (prevSlot >= 0) this.slotContents[prevSlot] = null;
+    if (prevSlot >= 0) {
+      this.slotContents[prevSlot] = null;
+    }
 
     const existing = this.slotContents[slotIndex];
     if (existing && existing !== cardObj) {
