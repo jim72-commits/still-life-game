@@ -212,7 +212,9 @@ class MenuScene extends Phaser.Scene {
         // Reset clears progress + prologue flag, then replay from the beginning
         GameScene.resetAll();
         this.scene.start("PrologueScene");
-      } else if (saved === 0 && !PrologueScene.hasBeenSeen()) {
+      } else if (saved === 0) {
+        // No progress yet — always show prologue (clears any stale seen flag)
+        try { localStorage.removeItem(LS.prologue); } catch (_) {}
         this.scene.start("PrologueScene");
       } else if (saved >= 5) {
         this._openLevelSelect(saved, total);

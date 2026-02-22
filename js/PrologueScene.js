@@ -75,8 +75,13 @@ class PrologueScene extends Phaser.Scene {
       this._goToLevel1();
     });
 
-    this.input.on("pointerdown", (_pointer, targets) => {
-      if (targets.length === 0) this._goToLevel1();
+    // Delay the global tap-to-skip listener so the tap that launched this
+    // scene from MenuScene cannot immediately dismiss the prologue.
+    this.time.delayedCall(600, () => {
+      if (this._done) return;
+      this.input.on("pointerdown", (_pointer, targets) => {
+        if (targets.length === 0) this._goToLevel1();
+      });
     });
   }
 
