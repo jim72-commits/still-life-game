@@ -120,10 +120,19 @@ class SummaryScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
 
-    this._createContinueButton(cx, 545, mono);
-
     GameScene.saveCompletion(rating, stats);
     Analytics.chapterComplete("The House", rating);
+
+    // Delay HTML button creation to allow iOS to fully settle canvas dimensions
+    const btnY = 446; // cy + 24 from _createShareSection
+    const btnW = 160;
+    const btnH = 28;
+    const cy2 = 545;
+    this.time.delayedCall(150, () => {
+      this._createShareButton(cx, btnY, btnW, btnH, mono, rating);
+      this._createContinueButton(cx, cy2, mono);
+      this._addResizeHandler(cx, btnY, btnW, btnH, cy2, mono, rating);
+    });
   }
 
   _safeNum(val) {
@@ -166,19 +175,14 @@ class SummaryScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
 
-    const btnW = 160;
-    const btnH = 28;
-    const btnY = cy + 24;
-
-    // Create HTML button for iOS touch compatibility
-    this._createShareButton(cx, btnY, btnW, btnH, mono);
+    // Button will be created via delayedCall in create()
   }
 
-  _createShareButton(cx, btnY, btnW, btnH, mono) {
-    // Get canvas position
+  _createShareButton(cx, btnY, btnW, btnH, mono, rating) {
+    // Recalculate position at button creation time for iOS
     const canvas = this.sys.game.canvas;
     const rect = canvas.getBoundingClientRect();
-    const scale = rect.width / 400; // Canvas logical width is 400
+    const scale = rect.width / this.scale.width;
     
     // Calculate button position
     const btnLeft = rect.left + (cx - btnW / 2) * scale;
@@ -188,7 +192,7 @@ class SummaryScene extends Phaser.Scene {
     
     // Create HTML button
     const button = document.createElement('button');
-    button.textContent = this._shareButtonLabel();
+    button.textContent = 'Share Result';
     Object.assign(button.style, {
       position: 'fixed',
       left: btnLeft + 'px',
@@ -214,22 +218,38 @@ class SummaryScene extends Phaser.Scene {
     
     // iOS touch handling
     let shareTapped = false;
-    const copyToClipboard = async () => {
+    const handleShare = async () => {
       soundManager.playClick();
+      
+      // Try native share first on iOS
+      if (navigator.share) {
+        try {
+          await navigator.share({
+            title: 'Still Life',
+            text: this.shareText,
+          });
+          return;
+        } catch(e) {
+          // User cancelled or share failed - fall through to clipboard
+          if (e.name === 'AbortError') return;
+        }
+      }
+      
+      // Fallback to clipboard
       const success = await this._copyToClipboard(this.shareText);
       if (success) {
         soundManager.playCorrect();
         button.textContent = 'Copied!';
         button.style.color = '#ccddaa';
         setTimeout(() => {
-          button.textContent = this._shareButtonLabel();
+          button.textContent = 'Share Result';
           button.style.color = '#bbbb99';
         }, 2000);
       } else {
         button.textContent = 'Copy failed';
         button.style.color = '#aa6666';
         setTimeout(() => {
-          button.textContent = this._shareButtonLabel();
+          button.textContent = 'Share Result';
           button.style.color = '#bbbb99';
         }, 2000);
       }
@@ -240,13 +260,13 @@ class SummaryScene extends Phaser.Scene {
       e.stopPropagation();
       if (shareTapped) return;
       shareTapped = true;
-      copyToClipboard();
-      setTimeout(() => { shareTapped = false; }, 1000);
+      handleShare();
+      setTimeout(() => { shareTapped = false; }, 1500);
     };
     
     button.onclick = () => {
       if (shareTapped) return;
-      copyToClipboard();
+      handleShare();
     };
     
     // Hover effects
@@ -258,6 +278,29 @@ class SummaryScene extends Phaser.Scene {
       button.style.background = '#333328';
       button.style.borderColor = 'rgba(85,85,64,0.6)';
     };
+  }
+
+  _addResizeHandler(cx, btnY, btnW, btnH, cy2, mono, rating) {
+    const repositionButtons = () => {
+      this._htmlElements.forEach(el => {
+        if (el && el.parentNode) {
+          el.parentNode.removeChild(el);
+        }
+      });
+      this._htmlElements = [];
+      const canvas = this.sys.game.canvas;
+      if (canvas) canvas.style.pointerEvents = 'none';
+      this.time.delayedCall(100, () => {
+        this._createShareButton(cx, btnY, btnW, btnH, mono, rating);
+        this._createContinueButton(cx, cy2, mono);
+      });
+    };
+
+    window.addEventListener('resize', repositionButtons);
+    
+    this.events.once('shutdown', () => {
+      window.removeEventListener('resize', repositionButtons);
+    });
   }
 
   async _copyToClipboard(text) {
@@ -288,20 +331,16 @@ class SummaryScene extends Phaser.Scene {
     }
   }
 
-  _shareButtonLabel() {
-    return navigator.share ? "Share Result" : "Copy to Clipboard";
-  }
-
   // ── Continue button ────────────────────────────────────
 
   _createContinueButton(cx, cy, mono) {
     const btnW = 220;
     const btnH = 44;
 
-    // Get canvas position
+    // Recalculate position at button creation time for iOS
     const canvas = this.sys.game.canvas;
     const rect = canvas.getBoundingClientRect();
-    const scale = rect.width / 400; // Canvas logical width is 400
+    const scale = rect.width / this.scale.width;
     
     // Calculate button position
     const btnLeft = rect.left + (cx - btnW / 2) * scale;
@@ -338,33 +377,32 @@ class SummaryScene extends Phaser.Scene {
     // iOS touch handling
     let menuTapped = false;
     const returnToMenu = () => {
-      console.log('[SummaryScene] Return to Menu button - CLICKED');
+      if (menuTapped) return;
+      menuTapped = true;
       soundManager.playClick();
       button.disabled = true;
+      button.style.opacity = '0.5';
       
-      this.cameras.main.fadeOut(800, 0, 0, 0);
-      this.cameras.main.once("camerafadeoutcomplete", () => {
-        console.log('[SummaryScene] Fade complete, starting MenuScene');
-        
-        // Clean up HTML elements
-        this._htmlElements.forEach(el => {
-          if (el && el.parentNode) {
-            el.parentNode.removeChild(el);
-          }
-        });
-        this._htmlElements = [];
-        
-        // Restore canvas touch events
-        const canvas = this.sys.game.canvas;
-        if (canvas) {
-          canvas.style.pointerEvents = 'auto';
+      // Remove HTML elements immediately before any async operations
+      this._htmlElements.forEach(el => {
+        if (el && el.parentNode) {
+          el.parentNode.removeChild(el);
         }
-        
-        // Transition in next frame
+      });
+      this._htmlElements = [];
+      
+      // Restore canvas pointer events
+      const canvas = this.sys.game.canvas;
+      if (canvas) canvas.style.pointerEvents = 'auto';
+      
+      // Use a simple timeout instead of camerafadeoutcomplete 
+      // which can fail on iOS touch handlers
+      this.cameras.main.fadeOut(600, 0, 0, 0);
+      setTimeout(() => {
         requestAnimationFrame(() => {
           this.scene.start('MenuScene');
         });
-      });
+      }, 650);
     };
     
     button.ontouchend = (e) => {
