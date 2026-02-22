@@ -7,49 +7,82 @@ class SoundManager {
     this.ambientGain = null;
     this.ambientFilter = null;
     this._available = true;
-    this._gestureListenersBound = false;
+    this._unlocked = false;
     this._loadPreference();
     this._bindGestureListeners();
   }
 
-  // Lazy AudioContext — only created on first user interaction
-  _initContext() {
-    if (this.ctx) return;
-    try {
-      const Ctor = window.AudioContext || window.webkitAudioContext;
-      if (!Ctor) {
-        this._available = false;
-        console.warn("Audio unavailable — running in silent mode");
-        return;
-      }
-      this.ctx = new Ctor();
-      this.masterGain = this.ctx.createGain();
-      this.masterGain.gain.setValueAtTime(0.28, this.ctx.currentTime);
-      this.masterGain.connect(this.ctx.destination);
-    } catch (_) {
-      this._available = false;
-      console.warn("Audio unavailable — running in silent mode");
-    }
-  }
-
+  // iOS WebKit requires AudioContext creation + an oscillator.start()
+  // call to happen synchronously inside a user gesture handler.
+  // We listen on capture phase so Phaser's canvas can't swallow the event.
   _bindGestureListeners() {
-    if (this._gestureListenersBound) return;
-    this._gestureListenersBound = true;
-
-    const onGesture = () => {
-      this._initContext();
-      if (this.ctx && this.ctx.state === "suspended") {
-        this.ctx.resume();
-      }
+    const handler = () => {
+      this._initAndUnlock();
       this.playAmbient();
     };
 
-    document.addEventListener("touchstart", onGesture, { once: true });
-    document.addEventListener("pointerdown", onGesture, { once: true });
+    const opts = { capture: true, passive: true };
+
+    ["touchstart", "touchend", "click", "pointerdown"].forEach(evt => {
+      document.addEventListener(evt, handler, opts);
+    });
+
+    this._gestureHandler = handler;
+    this._gestureOpts = opts;
+  }
+
+  _removeGestureListeners() {
+    if (!this._gestureHandler) return;
+    const handler = this._gestureHandler;
+    const opts = this._gestureOpts;
+    ["touchstart", "touchend", "click", "pointerdown"].forEach(evt => {
+      document.removeEventListener(evt, handler, opts);
+    });
+    this._gestureHandler = null;
+  }
+
+  _initAndUnlock() {
+    if (this._unlocked) return;
+
+    if (!this.ctx) {
+      try {
+        const Ctor = window.AudioContext || window.webkitAudioContext;
+        if (!Ctor) {
+          this._available = false;
+          return;
+        }
+        this.ctx = new Ctor();
+      } catch (_) {
+        this._available = false;
+        return;
+      }
+    }
+
+    try {
+      // Play a silent oscillator synchronously to unlock iOS audio
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      gain.gain.value = 0;
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start(0);
+      osc.stop(this.ctx.currentTime + 0.001);
+      osc.onended = () => {
+        try { osc.disconnect(); gain.disconnect(); } catch (_) {}
+      };
+    } catch (_) {}
+
+    if (this.ctx.state === "suspended") {
+      this.ctx.resume();
+    }
+
+    this._unlocked = true;
+    this._removeGestureListeners();
   }
 
   _getCtx() {
     if (!this._available || !this.ctx) return null;
+    if (!this._unlocked) return null;
     try {
       if (this.ctx.state === "suspended") {
         this.ctx.resume();

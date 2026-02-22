@@ -226,45 +226,68 @@ Chapter 2: The Office — Coming Soon</div>
 
 <script>
 // ══════════════════════════════════════
-// AUDIO — Web Audio API (lazy init for iOS)
+// AUDIO — Web Audio API (iOS-safe lazy init)
 // ══════════════════════════════════════
 (function(){
   let audioCtx = null;
   let masterGain = null;
   let audioStopped = false;
-  let audioStarted = false;
+  let unlocked = false;
 
   try {
     if (localStorage.getItem("stilllife_muted") === "true") return;
   } catch(_) {}
 
-  function initAudioContext() {
-    if (audioCtx) return;
+  // iOS WebKit requires AudioContext creation + an oscillator.start()
+  // synchronously inside a user gesture handler to unlock audio.
+  // We use capture phase so no other handler can swallow the event.
+  function onGesture() {
+    if (unlocked) return;
+
     try {
-      const Ctor = window.AudioContext || window.webkitAudioContext;
-      if (!Ctor) return;
-      audioCtx = new Ctor();
+      if (!audioCtx) {
+        const Ctor = window.AudioContext || window.webkitAudioContext;
+        if (!Ctor) return;
+        audioCtx = new Ctor();
+      }
+
+      // Silent oscillator unlock — must call start() synchronously in gesture
+      const silent = audioCtx.createOscillator();
+      const silentGain = audioCtx.createGain();
+      silentGain.gain.value = 0;
+      silent.connect(silentGain);
+      silentGain.connect(audioCtx.destination);
+      silent.start(0);
+      silent.stop(audioCtx.currentTime + 0.001);
+      silent.onended = function() {
+        try { silent.disconnect(); silentGain.disconnect(); } catch(e) {}
+      };
+
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+
       masterGain = audioCtx.createGain();
       masterGain.gain.setValueAtTime(0, audioCtx.currentTime);
       masterGain.gain.linearRampToValueAtTime(0.28, audioCtx.currentTime + 2.5);
       masterGain.connect(audioCtx.destination);
+
+      unlocked = true;
+      removeGestureListeners();
+      playNote(true);
     } catch(e) {}
   }
 
-  function startAudio() {
-    if (audioStarted) return;
-    initAudioContext();
-    if (audioCtx && audioCtx.state === 'suspended') {
-      audioCtx.resume();
-    }
-    if (audioCtx) {
-      audioStarted = true;
-      playNote(true);
-    }
-  }
+  var gestureEvents = ['touchstart', 'touchend', 'click', 'pointerdown'];
+  var gestureOpts = { capture: true, passive: true };
 
-  document.addEventListener('touchstart', startAudio, { once: true });
-  document.addEventListener('pointerdown', startAudio, { once: true });
+  gestureEvents.forEach(function(evt) {
+    document.addEventListener(evt, onGesture, gestureOpts);
+  });
+
+  function removeGestureListeners() {
+    gestureEvents.forEach(function(evt) {
+      document.removeEventListener(evt, onGesture, gestureOpts);
+    });
+  }
 
   function playNote(isC) {
     if (audioStopped || !audioCtx) return;
