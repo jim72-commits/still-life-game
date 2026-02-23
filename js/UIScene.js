@@ -33,15 +33,15 @@ class UIScene extends Phaser.Scene {
   _createSubmitButton() {
     const cx = 200;
     const by = 638;
-    const btnW = 272;
-    const btnH = 40;
+    const btnW = 352;
+    const btnH = 44;
 
     this.submitBg = this.add.graphics();
     this._drawSubmitBtn(0x1e3e28, 0x336644);
 
     this.submitLabel = this.add
       .text(cx, by, "Submit", {
-        fontSize: "14px",
+        fontSize: "16px",
         fontFamily: '"Special Elite", "Courier New", monospace',
         color: "#99bb99",
       })
@@ -72,8 +72,8 @@ class UIScene extends Phaser.Scene {
   _drawSubmitBtn(fill, stroke) {
     const cx = 200;
     const by = 638;
-    const btnW = 272;
-    const btnH = 40;
+    const btnW = 352;
+    const btnH = 44;
     this.submitBg.clear();
     this.submitBg.fillStyle(fill, 1);
     this.submitBg.fillRoundedRect(cx - btnW / 2, by - btnH / 2, btnW, btnH, 12);
@@ -107,8 +107,8 @@ class UIScene extends Phaser.Scene {
   // ── Hint "?" trigger ───────────────────────────────────
 
   _createHintButton() {
-    const x = 30;
-    const y = 638;
+    const x = 370;
+    const y = 30;
     const r = 24;
 
     this.hintBtnBg = this.add.graphics();
@@ -132,8 +132,8 @@ class UIScene extends Phaser.Scene {
   }
 
   _drawHintTrigger(fill, stroke) {
-    const x = 30;
-    const y = 638;
+    const x = 370;
+    const y = 30;
     const r = 24;
     this.hintBtnBg.clear();
     this.hintBtnBg.fillStyle(fill, 1);
