@@ -33,15 +33,15 @@ class UIScene extends Phaser.Scene {
   _createSubmitButton() {
     const cx = 200;
     const by = 638;
-    const btnW = 340;
-    const btnH = 50;
+    const btnW = 272;
+    const btnH = 40;
 
     this.submitBg = this.add.graphics();
     this._drawSubmitBtn(0x1e3e28, 0x336644);
 
     this.submitLabel = this.add
       .text(cx, by, "Submit", {
-        fontSize: "18px",
+        fontSize: "14px",
         fontFamily: '"Special Elite", "Courier New", monospace',
         color: "#99bb99",
       })
@@ -72,8 +72,8 @@ class UIScene extends Phaser.Scene {
   _drawSubmitBtn(fill, stroke) {
     const cx = 200;
     const by = 638;
-    const btnW = 340;
-    const btnH = 50;
+    const btnW = 272;
+    const btnH = 40;
     this.submitBg.clear();
     this.submitBg.fillStyle(fill, 1);
     this.submitBg.fillRoundedRect(cx - btnW / 2, by - btnH / 2, btnW, btnH, 12);
