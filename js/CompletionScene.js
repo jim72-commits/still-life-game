@@ -14,6 +14,7 @@ class CompletionScene extends Phaser.Scene {
         fontSize: "44px",
         fontFamily: '"Playfair Display", Georgia, serif',
         color: "#eeeeff",
+        resolution: Math.min(window.devicePixelRatio || 1, 3),
       })
       .setOrigin(0.5)
       .setAlpha(0);
@@ -25,6 +26,7 @@ class CompletionScene extends Phaser.Scene {
         color: "#aaaacc",
         align: "center",
         lineSpacing: 10,
+        resolution: Math.min(window.devicePixelRatio || 1, 3),
       })
       .setOrigin(0.5)
       .setAlpha(0);

@@ -44,7 +44,12 @@ class SummaryScene extends Phaser.Scene {
     this.cameras.main.setBackgroundColor(0x0a0a0a);
     this.cameras.main.fadeIn(800, 0, 0, 0);
 
-    this.add.text(cx, 30, rule, { fontSize: "14px", fontFamily: mono, color: "#555577" }).setOrigin(0.5);
+    this.add.text(cx, 30, rule, { 
+      fontSize: "14px", 
+      fontFamily: mono, 
+      color: "#555577",
+      resolution: Math.min(window.devicePixelRatio || 1, 3),
+    }).setOrigin(0.5);
 
     this.add
       .text(cx, 56, "CASE FILE \u2014 CLOSED", {
@@ -52,6 +57,7 @@ class SummaryScene extends Phaser.Scene {
         fontFamily: mono,
         color: "#d8d8f0",
         fontStyle: "bold",
+        resolution: Math.min(window.devicePixelRatio || 1, 3),
       })
       .setOrigin(0.5);
 
@@ -60,10 +66,16 @@ class SummaryScene extends Phaser.Scene {
         fontSize: "14px",
         fontFamily: mono,
         color: "#9999bb",
+        resolution: Math.min(window.devicePixelRatio || 1, 3),
       })
       .setOrigin(0.5);
 
-    this.add.text(cx, 100, rule, { fontSize: "14px", fontFamily: mono, color: "#555577" }).setOrigin(0.5);
+    this.add.text(cx, 100, rule, { 
+      fontSize: "14px", 
+      fontFamily: mono, 
+      color: "#555577",
+      resolution: Math.min(window.devicePixelRatio || 1, 3),
+    }).setOrigin(0.5);
 
     const cap = (n) => Math.min(n, 999);
     const lines = [
@@ -84,16 +96,23 @@ class SummaryScene extends Phaser.Scene {
         color: "#aaaacc",
         align: "left",
         lineSpacing: 6,
+        resolution: Math.min(window.devicePixelRatio || 1, 3),
       })
       .setOrigin(0.5);
 
-    this.add.text(cx, 305, rule, { fontSize: "14px", fontFamily: mono, color: "#555577" }).setOrigin(0.5);
+    this.add.text(cx, 305, rule, { 
+      fontSize: "14px", 
+      fontFamily: mono, 
+      color: "#555577",
+      resolution: Math.min(window.devicePixelRatio || 1, 3),
+    }).setOrigin(0.5);
 
     this.add
       .text(cx, 326, "INVESTIGATOR RATING:", {
         fontSize: "14px",
         fontFamily: mono,
         color: "#9999bb",
+        resolution: Math.min(window.devicePixelRatio || 1, 3),
       })
       .setOrigin(0.5);
 
@@ -103,10 +122,16 @@ class SummaryScene extends Phaser.Scene {
         fontFamily: mono,
         color: "#eeeeff",
         fontStyle: "bold",
+        resolution: Math.min(window.devicePixelRatio || 1, 3),
       })
       .setOrigin(0.5);
 
-    this.add.text(cx, 374, rule, { fontSize: "14px", fontFamily: mono, color: "#555577" }).setOrigin(0.5);
+    this.add.text(cx, 374, rule, { 
+      fontSize: "14px", 
+      fontFamily: mono, 
+      color: "#555577",
+      resolution: Math.min(window.devicePixelRatio || 1, 3),
+    }).setOrigin(0.5);
 
     this._createShareSection(cx, 422, rating, mono);
 

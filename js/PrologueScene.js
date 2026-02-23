@@ -25,6 +25,7 @@ class PrologueScene extends Phaser.Scene {
           color: "#e0e0e8",
           align: "center",
           wordWrap: { width: 340 },
+          resolution: Math.min(window.devicePixelRatio || 1, 3),
         })
         .setOrigin(0.5)
         .setAlpha(0)

@@ -114,6 +114,7 @@ class MenuScene extends Phaser.Scene {
         fontSize: "50px",
         fontFamily: serif,
         color: "#eeeeff",
+        resolution: Math.min(window.devicePixelRatio || 1, 3),
       })
       .setOrigin(0.5);
 
@@ -122,6 +123,7 @@ class MenuScene extends Phaser.Scene {
         fontSize: "14px",
         fontFamily: typo,
         color: "#9999b8",
+        resolution: Math.min(window.devicePixelRatio || 1, 3),
       })
       .setOrigin(0.5);
 
@@ -152,6 +154,7 @@ class MenuScene extends Phaser.Scene {
       this.add
         .text(cx, lastCardBottom + 20, rating, {
           fontSize: "13px", fontFamily: typo, color: "#aaaacc",
+          resolution: Math.min(window.devicePixelRatio || 1, 3),
         })
         .setOrigin(0.5);
     }

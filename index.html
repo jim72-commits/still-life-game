@@ -154,15 +154,39 @@
       resolution: Math.min(window.devicePixelRatio || 1, 3),
       backgroundColor: "#1a1a1a",
       parent: document.body,
+      pixelArt: false,
+      render: {
+        antialias: true,
+        antialiasGL: true,
+        pixelArt: false,
+        roundPixels: false,
+      },
       input: { touch: true },
       scale: {
         mode: Phaser.Scale.FIT,
         autoCenter: Phaser.Scale.CENTER_BOTH,
+        zoom: 1,
       },
       scene: sceneList,
     };
 
     var game = new Phaser.Game(config);
+
+    // Handle Samsung Flip and dual screen DPR changes
+    window.addEventListener('resize', () => {
+      const newDpr = Math.min(window.devicePixelRatio || 1, 3);
+      game.scale.setZoom(newDpr);
+      game.renderer.resize(game.scale.width, game.scale.height);
+    });
+
+    // Samsung Flip screen fold event
+    if (window.screen && window.screen.fold) {
+      window.screen.fold.addEventListener('change', () => {
+        setTimeout(() => {
+          window.dispatchEvent(new Event('resize'));
+        }, 300);
+      });
+    }
 
     if (startAtCompletion) {
       clearTimeout(window._loadTimer);

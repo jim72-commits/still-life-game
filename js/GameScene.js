@@ -70,6 +70,7 @@ class GameScene extends Phaser.Scene {
         fontStyle: "bold",
         align: "center",
         wordWrap: { width: 360 },
+        resolution: Math.min(window.devicePixelRatio || 1, 3),
       })
       .setOrigin(0.5);
 
@@ -78,6 +79,7 @@ class GameScene extends Phaser.Scene {
         fontSize: "12px",
         fontFamily: typo,
         color: "#9999bb",
+        resolution: Math.min(window.devicePixelRatio || 1, 3),
       })
       .setOrigin(0.5);
 
@@ -89,6 +91,7 @@ class GameScene extends Phaser.Scene {
         align: "center",
         wordWrap: { width: 350 },
         lineSpacing: 5,
+        resolution: Math.min(window.devicePixelRatio || 1, 3),
       })
       .setOrigin(0.5);
   }
@@ -220,12 +223,14 @@ class GameScene extends Phaser.Scene {
       const label = this.add
         .text(cx, cy - 45, `\u2713  ${roomsCompleted} rooms catalogued`, {
           fontSize: "12px", fontFamily: typo, color: "#77bb88",
+          resolution: Math.min(window.devicePixelRatio || 1, 3),
         })
         .setOrigin(0.5).setAlpha(0);
 
       const actLabel = this.add
         .text(cx, cy - 18, `Act ${actNum}: ${actNames[actNum - 1]}`, {
           fontSize: "14px", fontFamily: typo, color: "#9999bb",
+          resolution: Math.min(window.devicePixelRatio || 1, 3),
         })
         .setOrigin(0.5).setAlpha(0);
 
@@ -233,6 +238,7 @@ class GameScene extends Phaser.Scene {
         .text(cx, cy + 16, line, {
           fontSize: "17px", fontFamily: typo, color: "#d8d8e8",
           align: "center", wordWrap: { width: 340 },
+          resolution: Math.min(window.devicePixelRatio || 1, 3),
         })
         .setOrigin(0.5).setAlpha(0);
 
